@@ -34,17 +34,21 @@ async fn main() {
         // WIP : manage cpu usage via timer ie. with fps limiter
         let game_tick = get_time();
 
+        let tts = target_frame_time - game_tick + last_game_tick;
+
         // if new frame happens too early, we skip it
-        if game_tick - last_game_tick < target_frame_time{
-            // sleep on app.
-            let tts = target_frame_time - game_tick + last_game_tick;
+
+        if tts > 0. {
+            // sleep on app if needed...
             println!("sleep {:?}", tts);
-            thread::sleep( Duration::from_secs_f64(tts));
-            // OR wait for next frame
+            thread::sleep(Duration::from_secs_f64(tts));
+        }
+
+        // OR wait for next frame
             // works to skip update in wasm but breaks render on native app
             // next_frame().await
             //See https://github.com/not-fl3/macroquad/issues/170 and https://github.com/not-fl3/macroquad/issues/380
-        } else {
+        // } else {
 
             last_game_tick = game_tick;
 
@@ -113,6 +117,6 @@ async fn main() {
             draw_texture(&texture, 0., 0., WHITE);
 
             next_frame().await
-        }
+        // }
     }
 }
