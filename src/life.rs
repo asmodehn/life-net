@@ -1,5 +1,21 @@
-use crate::{life, CellState};
+use crate::engine;
+use macroquad::color::{BLACK, WHITE};
+use macroquad::prelude::Image;
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum CellState {
+    Alive,
+    Dead,
+}
+
+pub struct World {
+    pub width: usize,
+    pub height: usize,
+    pub cells: Vec<CellState>,
+    pub buffer: Vec<CellState>,
+}
+
+//TODO : impl Cell/CellState
 fn neighbours_count(cells: &Vec<CellState>, x: i32, y: i32, w: usize, h: usize) -> i32 {
     let mut neighbors_count = 0;
 
@@ -24,7 +40,7 @@ fn neighbours_count(cells: &Vec<CellState>, x: i32, y: i32, w: usize, h: usize) 
 }
 
 pub fn cell_update(cells: &Vec<CellState>, x: i32, y: i32, w: usize, h: usize) -> CellState {
-    let neighbors_count = life::neighbours_count(&cells, x, y, w, h);
+    let neighbors_count = neighbours_count(&cells, x, y, w, h);
 
     let current_cell = cells[y as usize * w + x as usize];
     return match (current_cell, neighbors_count) {
@@ -45,106 +61,156 @@ pub fn cell_update(cells: &Vec<CellState>, x: i32, y: i32, w: usize, h: usize) -
     };
 }
 
+impl World {
+    pub fn new(world_width: usize, world_height: usize) -> World {
+        let mut world = World {
+            width: world_width,
+            height: world_height,
+            cells: vec![CellState::Dead; world_width * world_height],
+            buffer: vec![CellState::Dead; world_width * world_height],
+        };
+
+        for cell in world.cells.iter_mut() {
+            if macroquad::prelude::rand::gen_range(0, 5) == 0 {
+                *cell = CellState::Alive;
+            }
+        }
+        return world;
+    }
+}
+
+impl engine::Updateable for World {
+    fn update(self: &mut World) {
+        let w = self.width;
+        let h = self.height;
+
+        for y in 0..h as i32 {
+            for x in 0..w as i32 {
+                self.buffer[y as usize * w + x as usize] = cell_update(&self.cells, x, y, w, h);
+            }
+        }
+        for i in 0..self.buffer.len() {
+            // TODO : move tis somewhere else ?
+            self.cells[i] = self.buffer[i];
+        }
+    }
+}
+
+impl engine::Renderable for World {
+    fn render(&self, buffer: &mut Image) {
+        for i in 0..self.buffer.len() {
+            buffer.set_pixel(
+                (i as u16 % buffer.width) as u32,
+                (i as u16 / buffer.height) as u32,
+                match self.buffer[i as usize] {
+                    crate::life::CellState::Alive => BLACK,
+                    crate::life::CellState::Dead => WHITE,
+                },
+            );
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::{life, CellState};
+    use crate::life;
 
     #[test]
     fn check_rule1() {
-        let a = CellState::Alive;
-        let d = CellState::Dead;
+        let a = life::CellState::Alive;
+        let d = life::CellState::Dead;
         // all possible cases with 0 or 1 neighbour (<2)
         let alone = vec![d, d, d, d, a, d, d, d, d];
-        let nn = vec![d,a,d, d,a,d, d,d,d];
-        let sn = vec![d,d,d,d,a,d,d,a,d];
-        let en = vec![d,d,d,d,a,a,d,d,d];
-        let wn = vec![d,d,d,a,a,d,d,d,d];
-        let nen = vec![d,d,a,d,a,d,d,d,d];
-        let nwn = vec![a,d,d,d,a,d,d,d,d];
-        let sen = vec![d,d,d,d,a,d,d,d,a];
-        let swn = vec![d,d,d,d,a,d,a,d,d];
-        assert_eq!(life::cell_update(&alone, 1,1,3,3), CellState::Dead);
-        assert_eq!(life::cell_update(&nn, 1,1,3,3), CellState::Dead);
-        assert_eq!(life::cell_update(&sn, 1,1,3,3), CellState::Dead);
-        assert_eq!(life::cell_update(&en, 1,1,3,3), CellState::Dead);
-        assert_eq!(life::cell_update(&wn, 1,1,3,3), CellState::Dead);
-        assert_eq!(life::cell_update(&nen, 1,1,3,3), CellState::Dead);
-        assert_eq!(life::cell_update(&nwn, 1,1,3,3), CellState::Dead);
-        assert_eq!(life::cell_update(&sen, 1,1,3,3), CellState::Dead);
-        assert_eq!(life::cell_update(&swn, 1,1,3,3), CellState::Dead);
+        let nn = vec![d, a, d, d, a, d, d, d, d];
+        let sn = vec![d, d, d, d, a, d, d, a, d];
+        let en = vec![d, d, d, d, a, a, d, d, d];
+        let wn = vec![d, d, d, a, a, d, d, d, d];
+        let nen = vec![d, d, a, d, a, d, d, d, d];
+        let nwn = vec![a, d, d, d, a, d, d, d, d];
+        let sen = vec![d, d, d, d, a, d, d, d, a];
+        let swn = vec![d, d, d, d, a, d, a, d, d];
+        assert_eq!(life::cell_update(&alone, 1, 1, 3, 3), life::CellState::Dead);
+        assert_eq!(life::cell_update(&nn, 1, 1, 3, 3), life::CellState::Dead);
+        assert_eq!(life::cell_update(&sn, 1, 1, 3, 3), life::CellState::Dead);
+        assert_eq!(life::cell_update(&en, 1, 1, 3, 3), life::CellState::Dead);
+        assert_eq!(life::cell_update(&wn, 1, 1, 3, 3), life::CellState::Dead);
+        assert_eq!(life::cell_update(&nen, 1, 1, 3, 3), life::CellState::Dead);
+        assert_eq!(life::cell_update(&nwn, 1, 1, 3, 3), life::CellState::Dead);
+        assert_eq!(life::cell_update(&sen, 1, 1, 3, 3), life::CellState::Dead);
+        assert_eq!(life::cell_update(&swn, 1, 1, 3, 3), life::CellState::Dead);
     }
 
     #[test]
     fn check_rule3() {
-
-        let a = CellState::Alive;
-        let d = CellState::Dead;
+        let a = life::CellState::Alive;
+        let d = life::CellState::Dead;
         // all possible cases with 4, 5, 6, 7 or 8 neighbours (>3)
-        let surrounded = vec![a,a,a,a,a,a,a,a,a];
-        let seven: Vec<Vec<CellState>> = vec![
-          vec![d,a,a,a,a,a,a,a,a],
-            vec![a,d,a,a,a,a,a,a,a],
-            vec![a,a,d,a,a,a,a,a,a],
-            vec![a,a,a,d,a,a,a,a,a],
-            vec![a,a,a,a,a,d,a,a,a],
-            vec![a,a,a,a,a,a,d,a,a],
-            vec![a,a,a,a,a,a,a,d,a],
-            vec![a,a,a,a,a,a,a,a,d]
+        let surrounded = vec![a, a, a, a, a, a, a, a, a];
+        let seven: Vec<Vec<life::CellState>> = vec![
+            vec![d, a, a, a, a, a, a, a, a],
+            vec![a, d, a, a, a, a, a, a, a],
+            vec![a, a, d, a, a, a, a, a, a],
+            vec![a, a, a, d, a, a, a, a, a],
+            vec![a, a, a, a, a, d, a, a, a],
+            vec![a, a, a, a, a, a, d, a, a],
+            vec![a, a, a, a, a, a, a, d, a],
+            vec![a, a, a, a, a, a, a, a, d],
         ];
         //TODO : combinations for 6, 5 and 4...
 
-        assert_eq!(life::cell_update(&surrounded, 1,1,3,3), CellState::Dead);
+        assert_eq!(
+            life::cell_update(&surrounded, 1, 1, 3, 3),
+            life::CellState::Dead
+        );
         for s in seven {
-            assert_eq!(life::cell_update(&s, 1, 1, 3, 3), CellState::Dead);
+            assert_eq!(life::cell_update(&s, 1, 1, 3, 3), life::CellState::Dead);
         }
     }
 
     #[test]
     fn check_rule2() {
-
-        let a = CellState::Alive;
-        let d = CellState::Dead;
+        let a = life::CellState::Alive;
+        let d = life::CellState::Dead;
 
         //TODO : all combinations for 2 and 3...
-        let two = vec![d,a,a,d,a,d,d,d,d];
-        let three = vec![d,d,a,d,a,a,a,d,d];
+        let two = vec![d, a, a, d, a, d, d, d, d];
+        let three = vec![d, d, a, d, a, a, a, d, d];
 
-        assert_eq!(life::cell_update(&two, 1,1,3,3), CellState::Alive);
-        assert_eq!(life::cell_update(&three, 1,1,3,3), CellState::Alive);
-
+        assert_eq!(life::cell_update(&two, 1, 1, 3, 3), life::CellState::Alive);
+        assert_eq!(
+            life::cell_update(&three, 1, 1, 3, 3),
+            life::CellState::Alive
+        );
     }
 
     #[test]
     fn check_rule4() {
-        let a = CellState::Alive;
-        let d = CellState::Dead;
+        let a = life::CellState::Alive;
+        let d = life::CellState::Dead;
 
+        let three = vec![d, d, a, d, d, a, a, d, d];
 
-        let three = vec![d,d,a,d,d,a,a,d,d];
-
-        assert_eq!(life::cell_update(&three, 1,1,3,3), CellState::Alive);
+        assert_eq!(
+            life::cell_update(&three, 1, 1, 3, 3),
+            life::CellState::Alive
+        );
     }
 
     #[test]
-    fn dead_alone_check(){
-        let a = CellState::Alive;
-        let d = CellState::Dead;
+    fn dead_alone_check() {
+        let a = life::CellState::Alive;
+        let d = life::CellState::Dead;
 
-
-        let two = vec![d,d,a,d,d,d,a,d,d];
-        assert_eq!(life::cell_update(&two, 1,1,3,3), CellState::Dead);
-
+        let two = vec![d, d, a, d, d, d, a, d, d];
+        assert_eq!(life::cell_update(&two, 1, 1, 3, 3), life::CellState::Dead);
     }
 
     #[test]
-    fn dead_in_crowd_check(){
-        let a = CellState::Alive;
-        let d = CellState::Dead;
+    fn dead_in_crowd_check() {
+        let a = life::CellState::Alive;
+        let d = life::CellState::Dead;
 
-
-        let four = vec![d,d,a,d,d,a,a,d,a];
-        assert_eq!(life::cell_update(&four, 1,1,3,3), CellState::Dead);
-
+        let four = vec![d, d, a, d, d, a, a, d, a];
+        assert_eq!(life::cell_update(&four, 1, 1, 3, 3), life::CellState::Dead);
     }
-
 }
