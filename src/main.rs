@@ -19,7 +19,7 @@ async fn main() {
     let w = screen_width() as usize;
     let h = screen_height() as usize;
 
-    let mut rb = engine::init(w, h);
+    let mut rb = engine::RenderBuffer::new(w, h);
 
     let mut world = life::World::new(w, h);
 

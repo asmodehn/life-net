@@ -1,6 +1,7 @@
 use crate::engine;
 use macroquad::color::{BLACK, WHITE};
 use macroquad::prelude::Image;
+use std::time::Duration;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum CellState {
@@ -79,8 +80,8 @@ impl World {
     }
 }
 
-impl engine::Updateable for World {
-    fn update(self: &mut World) {
+impl engine::Updatable for World {
+    fn update(self: &mut World, _elapsed: Duration) {
         let w = self.width;
         let h = self.height;
 
