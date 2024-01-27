@@ -1,6 +1,8 @@
-use crate::engine;
 use macroquad::color::{BLACK, WHITE};
 use macroquad::prelude::Image;
+
+use crate::engine::Updatable;
+use crate::render::Renderable;
 use std::time::Duration;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -14,6 +16,7 @@ pub struct World {
     pub height: usize,
     pub cells: Vec<CellState>,
     pub buffer: Vec<CellState>,
+    pub image: Image,
 }
 
 //TODO : impl Cell/CellState
@@ -69,6 +72,7 @@ impl World {
             height: world_height,
             cells: vec![CellState::Dead; world_width * world_height],
             buffer: vec![CellState::Dead; world_width * world_height],
+            image: Image::gen_image_color(world_width as u16, world_height as u16, WHITE),
         };
 
         for cell in world.cells.iter_mut() {
@@ -80,8 +84,8 @@ impl World {
     }
 }
 
-impl engine::Updatable for World {
-    fn update(self: &mut World, _elapsed: Duration) {
+impl Updatable for World {
+    fn update(&mut self, _elapsed: Duration) {
         let w = self.width;
         let h = self.height;
 
@@ -97,8 +101,9 @@ impl engine::Updatable for World {
     }
 }
 
-impl engine::Renderable for World {
-    fn render(&self, buffer: &mut Image) {
+impl Renderable for World {
+    //TODO : review lifetime once structure is decided
+    fn render<'s>(&'s self, buffer: &'s mut Image) -> &'s Image {
         for i in 0..self.buffer.len() {
             buffer.set_pixel(
                 (i as u16 % buffer.width) as u32,
@@ -109,6 +114,15 @@ impl engine::Renderable for World {
                 },
             );
         }
+        buffer
+    }
+}
+
+#[allow(dead_code)]
+pub fn run(w: &mut World) {
+    loop {
+        //TODO : actual duration...
+        w.update(Duration::new(0, 0));
     }
 }
 

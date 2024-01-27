@@ -1,5 +1,6 @@
 mod engine;
 mod life;
+mod render;
 
 use macroquad::prelude::*;
 
@@ -19,9 +20,13 @@ async fn main() {
     let w = screen_width() as usize;
     let h = screen_height() as usize;
 
-    let mut rb = engine::RenderBuffer::new(w, h);
+    //We want a functional architecture
+    // => the structure of the nested loops' states should be reflected here
 
     let mut world = life::World::new(w, h);
 
-    engine::throttled_loop(&mut rb, &mut world).await;
+    //TMP the render engine is hte holder of world... TODO : change to smthg else...
+    let mut re = render::RenderEngine::new(w, h, &mut world);
+
+    render::run(&mut re).await;
 }
