@@ -25,8 +25,8 @@ async fn main() {
 
     let mut world = life::World::new(w, h);
 
-    //TMP the render engine is hte holder of world... TODO : change to smthg else...
-    let mut re = render::RenderEngine::new(w, h, &mut world);
+    //TMP the render engine is hte holder of world... WIP : change to smthg else...
+    let mut re = render::RenderBuffer::new(w, h);
 
-    render::run(&mut re).await;
+    render::run(&mut re, &mut world).await;
 }

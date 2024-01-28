@@ -1,27 +1,26 @@
-use crate::engine::Updatable;
+// use crate::engine::Updatable;
+use crate::life::World;
 use macroquad::color::WHITE;
 use macroquad::prelude::{
     clear_background, draw_texture, get_frame_time, next_frame, Image, Texture2D,
 };
 use std::time::Duration;
 
-pub trait Renderable: Updatable {
+pub trait Renderable {
     fn render<'s>(&'s self, image: &'s mut Image) -> &'s Image;
 }
 
-pub struct RenderEngine<'r> {
-    renderable: &'r mut dyn Renderable,
+pub struct RenderBuffer {
     pub image: Image,
     texture: Texture2D,
 }
-//TODO : extend this -> RenderEngine with async loop and refresh rate management...
+//TODO : rename this Engine -> Buffer
 
-impl RenderEngine<'_> {
-    pub fn new(screen_width: usize, screen_height: usize, r: &mut impl Renderable) -> RenderEngine {
+impl RenderBuffer {
+    pub fn new(screen_width: usize, screen_height: usize) -> RenderBuffer {
         let img = Image::gen_image_color(screen_width as u16, screen_height as u16, WHITE);
         let txtr = Texture2D::from_image(&img);
-        RenderEngine {
-            renderable: r,
+        RenderBuffer {
             image: img,
             texture: txtr,
         }
@@ -32,16 +31,9 @@ impl RenderEngine<'_> {
     //     self.renderable = Box::new(r);
     // }
     // OR : pass it into the run function only...
-}
 
-impl Updatable for RenderEngine<'_> {
-    fn update(&mut self, elapsed: Duration) {
+    fn update(&mut self, _elapsed: Duration) {
         clear_background(WHITE);
-
-        //TMP render update driving simulatio update
-        self.renderable.update(elapsed);
-
-        self.renderable.render(&mut self.image);
 
         self.texture.update(&self.image);
 
@@ -49,30 +41,21 @@ impl Updatable for RenderEngine<'_> {
     }
 }
 
-// impl Engine for RenderEngine{
-//     fn run_once(&mut self, world: &mut (impl Updatable)){
-//
-//
-//         //TODO : separate update refresh rate and render rate...
-//         world.update();
-//
-//         self.render(world);
-//
-//     }
-//     async fn run (&mut self, world: &mut (impl Updatable)){
-//         loop{
-//             self.run_once(world);
-//
-//             next_frame().await;
-//         }
-//     }
-// }
-
-pub async fn run(r: &mut RenderEngine<'_>) {
+//TODO : extend this -> Engine with async loop and refresh rate management...
+pub async fn run(rb: &mut RenderBuffer, world: &mut World) {
     loop {
         //since render module focuses on rendering only
         // the time spent here is the frametime returned by macroquad
-        r.update(Duration::from_secs_f32(get_frame_time()));
+        let elapsed = Duration::from_secs_f32(get_frame_time());
+
+        //TMP render update driving simulation update
+        world.update(elapsed);
+        //TODO : pass a call (closure?) to life::run() as argument here.
+
+        //TMP : render here instead of update ? because we want to avoid hold world ref in renderbuffer ?
+        world.render(&mut rb.image);
+
+        rb.update(elapsed);
 
         next_frame().await;
     }

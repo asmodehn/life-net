@@ -1,7 +1,7 @@
 use macroquad::color::{BLACK, WHITE};
 use macroquad::prelude::Image;
 
-use crate::engine::Updatable;
+// use crate::engine::Updatable;
 use crate::render::Renderable;
 use std::time::Duration;
 
@@ -47,7 +47,8 @@ pub fn cell_update(cells: &Vec<CellState>, x: i32, y: i32, w: usize, h: usize) -
     let neighbors_count = neighbours_count(&cells, x, y, w, h);
 
     let current_cell = cells[y as usize * w + x as usize];
-    return match (current_cell, neighbors_count) {
+
+    match (current_cell, neighbors_count) {
         // Rule 1: Any live cell with fewer than two live neighbours
         // dies, as if caused by underpopulation.
         (CellState::Alive, x) if x < 2 => CellState::Dead,
@@ -62,7 +63,7 @@ pub fn cell_update(cells: &Vec<CellState>, x: i32, y: i32, w: usize, h: usize) -
         (CellState::Dead, 3) => CellState::Alive,
         // All other cells remain in the same state.
         (otherwise, _) => otherwise,
-    };
+    }
 }
 
 impl World {
@@ -82,10 +83,8 @@ impl World {
         }
         return world;
     }
-}
 
-impl Updatable for World {
-    fn update(&mut self, _elapsed: Duration) {
+    pub(crate) fn update(&mut self, _elapsed: Duration) {
         let w = self.width;
         let h = self.height;
 
