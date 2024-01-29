@@ -26,7 +26,7 @@ async fn main() {
     //We want a functional architecture
     // => the structure of the nested loops' states should be reflected here
 
-    let mut world = life::World::new(w, h);
+    let mut world = life::world::World::new(w, h);
 
     //TMP the render engine is hte holder of world... WIP : change to smthg else...
     let mut re = render::RenderBuffer::new(&world.image); // TMP as u16 -> find better ways...

@@ -1,4 +1,4 @@
-use crate::life::usize_from_i32;
+use crate::life::world::usize_from_i32;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum State {

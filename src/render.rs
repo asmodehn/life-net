@@ -1,5 +1,5 @@
 // use crate::engine::Updatable;
-use crate::life::World;
+use crate::life::world::World;
 use macroquad::color::WHITE;
 use macroquad::prelude::{
     clear_background, draw_texture, get_frame_time, next_frame, Image, Texture2D,
@@ -10,10 +10,11 @@ pub trait Renderable {
     fn render(&mut self) -> &Image;
 }
 
+/// Render manages only texture rendering on screen (with Z order (TODO) )
+/// Image Rendering is done elsewhere.
 pub struct RenderBuffer {
     texture: Texture2D,
 }
-//TODO : rename this Engine -> Buffer
 
 impl RenderBuffer {
     //Note : u16 here to render in the image
