@@ -7,7 +7,7 @@ use macroquad::prelude::*;
 fn window_conf() -> Conf {
     Conf {
         window_title: "Life Net".to_owned(),
-        window_width: 128,
+        window_width: 256,
         window_height: 128,
         fullscreen: false,
         window_resizable: false,
@@ -17,8 +17,11 @@ fn window_conf() -> Conf {
 
 #[macroquad::main(window_conf)]
 async fn main() {
-    let w = screen_width() as usize;
-    let h = screen_height() as usize;
+    //convert f32 screen size to something safe for render on image (u16 size)
+    let w = screen_width().floor() as u16;
+    let h = screen_height().floor() as u16;
+
+    println!("{} {}", w, h);
 
     //We want a functional architecture
     // => the structure of the nested loops' states should be reflected here

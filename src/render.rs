@@ -17,8 +17,9 @@ pub struct RenderBuffer {
 //TODO : rename this Engine -> Buffer
 
 impl RenderBuffer {
-    pub fn new(screen_width: usize, screen_height: usize) -> RenderBuffer {
-        let img = Image::gen_image_color(screen_width as u16, screen_height as u16, WHITE);
+    //Note : u16 here to render in the image
+    pub fn new(screen_width: u16, screen_height: u16) -> RenderBuffer {
+        let img = Image::gen_image_color(screen_width, screen_height, WHITE);
         let txtr = Texture2D::from_image(&img);
         RenderBuffer {
             image: img,
