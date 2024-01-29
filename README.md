@@ -48,7 +48,8 @@ Depending on the choices made, the game design will need to be adapted to the ca
 # Roadmap
 - [X] traditional game of life
 - [ ] multi-loop engine
+- [ ] unlimited screen size
 - [ ] game of life with terrain
+- [ ] add some basic UI
 - [ ] game of life with multiple species
-- [ ] user UI.
 - [ ] MORE : towards multiplayer...

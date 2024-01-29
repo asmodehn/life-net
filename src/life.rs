@@ -12,26 +12,26 @@ pub enum CellState {
 }
 
 pub struct World {
-    pub width: u16,
-    pub height: u16,
+    pub width: usize,
+    pub height: usize,
     pub cells: Vec<CellState>,
     pub buffer: Vec<CellState>,
     pub image: Image,
 }
 
 use std::convert::TryFrom;
-use std::usize;
-
-fn usize_from_u16(v: u16) -> usize {
-    usize::try_from(v).unwrap()
-}
+use std::{u16, usize};
 
 fn usize_from_i32(v: i32) -> usize {
     usize::try_from(v).unwrap()
 }
 
+fn u16_from_usize(v: usize) -> u16 {
+    u16::try_from(v).unwrap()
+}
+
 //TODO : impl Cell/CellState
-fn neighbours_count(cells: &Vec<CellState>, x: i32, y: i32, w: u16, h: u16) -> i32 {
+fn neighbours_count(cells: &Vec<CellState>, x: i32, y: i32, w: usize, h: usize) -> i32 {
     let mut neighbors_count = 0;
 
     for j in -1i32..=1 {
@@ -54,7 +54,7 @@ fn neighbours_count(cells: &Vec<CellState>, x: i32, y: i32, w: u16, h: u16) -> i
     return neighbors_count;
 }
 
-pub fn cell_update(cells: &Vec<CellState>, x: i32, y: i32, w: u16, h: u16) -> CellState {
+pub fn cell_update(cells: &Vec<CellState>, x: i32, y: i32, w: usize, h: usize) -> CellState {
     let neighbors_count = neighbours_count(&cells, x, y, w, h);
 
     let current_cell = cells[usize_from_i32(y * w as i32 + x)];
@@ -78,13 +78,23 @@ pub fn cell_update(cells: &Vec<CellState>, x: i32, y: i32, w: u16, h: u16) -> Ce
 }
 
 impl World {
-    pub fn new(world_width: u16, world_height: u16) -> World {
+    //size of your world depend on your platform
+    pub fn new(world_width: usize, world_height: usize) -> World {
+        let world_size = match world_width.overflowing_mul(world_height) {
+            (res, false) => res,
+            (_, true) => {
+                println!("WARNING: World size too big !");
+                usize::MAX
+            }
+        };
+
         let mut world = World {
             width: world_width,
             height: world_height,
-            cells: vec![CellState::Dead; usize_from_u16(world_width * world_height)],
-            buffer: vec![CellState::Dead; usize_from_u16(world_width * world_height)],
-            image: Image::gen_image_color(world_width, world_height, WHITE),
+            cells: vec![CellState::Dead; world_size],
+            buffer: vec![CellState::Dead; world_size],
+            //TODO : multiple images if usize > u16
+            image: Image::gen_image_color(world_width as u16, world_height as u16, WHITE),
         };
 
         for cell in world.cells.iter_mut() {
@@ -101,8 +111,7 @@ impl World {
 
         for y in 0..h {
             for x in 0..w {
-                self.buffer[usize_from_u16(y * w + x)] =
-                    cell_update(&self.cells, x as i32, y as i32, w, h);
+                self.buffer[y * w + x] = cell_update(&self.cells, x as i32, y as i32, w, h);
             }
         }
         for i in 0..self.buffer.len() {
@@ -117,8 +126,8 @@ impl Renderable for World {
     fn render<'s>(&'s self, buffer: &'s mut Image) -> &'s Image {
         for i in 0..self.buffer.len() {
             buffer.set_pixel(
-                (i as u16 % buffer.width) as u32,
-                (i as u16 / buffer.width) as u32,
+                (u16_from_usize(i) % buffer.width) as u32,
+                (u16_from_usize(i) / buffer.width) as u32,
                 match self.buffer[i as usize] {
                     crate::life::CellState::Alive => BLACK,
                     crate::life::CellState::Dead => WHITE,

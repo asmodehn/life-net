@@ -18,8 +18,8 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
     //convert f32 screen size to something safe for render on image (u16 size)
-    let w = screen_width().floor() as u16;
-    let h = screen_height().floor() as u16;
+    let w = screen_width().floor() as usize;
+    let h = screen_height().floor() as usize;
 
     println!("{} {}", w, h);
 
@@ -29,7 +29,7 @@ async fn main() {
     let mut world = life::World::new(w, h);
 
     //TMP the render engine is hte holder of world... WIP : change to smthg else...
-    let mut re = render::RenderBuffer::new(w, h);
+    let mut re = render::RenderBuffer::new(w as u16, h as u16); // TMP as u16 -> find better ways...
 
     render::run(&mut re, &mut world).await;
 }
