@@ -7,24 +7,20 @@ use macroquad::prelude::{
 use std::time::Duration;
 
 pub trait Renderable {
-    fn render<'s>(&'s self, image: &'s mut Image) -> &'s Image;
+    fn render(&mut self) -> &Image;
 }
 
 pub struct RenderBuffer {
-    pub image: Image,
     texture: Texture2D,
 }
 //TODO : rename this Engine -> Buffer
 
 impl RenderBuffer {
     //Note : u16 here to render in the image
-    pub fn new(screen_width: u16, screen_height: u16) -> RenderBuffer {
-        let img = Image::gen_image_color(screen_width, screen_height, WHITE);
-        let txtr = Texture2D::from_image(&img);
-        RenderBuffer {
-            image: img,
-            texture: txtr,
-        }
+    pub fn new(initial_image: &Image) -> RenderBuffer {
+        // let img = Image::gen_image_color(screen_width, screen_height, WHITE);
+        let txtr = Texture2D::from_image(initial_image);
+        RenderBuffer { texture: txtr }
     }
 
     //TODO : show / hide methods to add / remove something from the list of things to render...
@@ -33,10 +29,10 @@ impl RenderBuffer {
     // }
     // OR : pass it into the run function only...
 
-    fn update(&mut self, _elapsed: Duration) {
+    fn update(&mut self, image: &Image) {
         clear_background(WHITE);
 
-        self.texture.update(&self.image);
+        self.texture.update(image);
 
         draw_texture(&self.texture, 0., 0., WHITE);
     }
@@ -54,9 +50,9 @@ pub async fn run(rb: &mut RenderBuffer, world: &mut World) {
         //TODO : pass a call (closure?) to life::run() as argument here.
 
         //TMP : render here instead of update ? because we want to avoid hold world ref in renderbuffer ?
-        world.render(&mut rb.image);
+        let img = world.render();
 
-        rb.update(elapsed);
+        rb.update(img);
 
         next_frame().await;
     }

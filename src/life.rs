@@ -23,7 +23,7 @@ pub struct World {
     pub height: usize,
     pub cells: Vec<cell::State>,
     pub buffer: Vec<cell::State>,
-    pub image: Image,
+    pub image: Image, // TODO : scene graph to hold multiple images with relative positions...
 }
 
 impl World {
@@ -72,18 +72,18 @@ impl World {
 
 impl Renderable for World {
     //TODO : review lifetime once structure is decided
-    fn render<'s>(&'s self, buffer: &'s mut Image) -> &'s Image {
+    fn render(&mut self) -> &Image {
         for i in 0..self.buffer.len() {
-            buffer.set_pixel(
-                (u16_from_usize(i) % buffer.width) as u32,
-                (u16_from_usize(i) / buffer.width) as u32,
-                match self.buffer[i as usize] {
+            self.image.set_pixel(
+                (u16_from_usize(i) % self.image.width) as u32,
+                (u16_from_usize(i) / self.image.width) as u32,
+                match self.buffer[i] {
                     cell::State::Alive => BLACK,
                     cell::State::Dead => WHITE,
                 },
             );
         }
-        buffer
+        &self.image
     }
 }
 
