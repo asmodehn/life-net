@@ -12,6 +12,8 @@ fn u16_from_usize(v: usize) -> u16 {
     u16::try_from(v).unwrap()
 }
 
+//TODO : a grid of images (u16 * u16), modifiable as a single image ( ...
+
 pub struct World {
     pub width: usize,
     pub height: usize,
@@ -58,7 +60,7 @@ impl World {
             }
         }
         for i in 0..self.buffer.len() {
-            // TODO : move tis somewhere else ?
+            // TODO : move this somewhere else ?
             self.cells[i] = self.buffer[i];
         }
     }
@@ -78,13 +80,5 @@ impl Renderable for World {
             );
         }
         &self.image
-    }
-}
-
-#[allow(dead_code)]
-pub fn run(w: &mut World) {
-    loop {
-        //TODO : actual duration...
-        w.update(Duration::new(0, 0));
     }
 }

@@ -1,8 +1,11 @@
 mod engine;
 mod life;
 mod render;
+mod simulation;
 
+use crate::simulation::Simulation;
 use macroquad::prelude::*;
+use std::cell::RefCell;
 
 fn window_conf() -> Conf {
     Conf {
@@ -26,10 +29,28 @@ async fn main() {
     //We want a functional architecture
     // => the structure of the nested loops' states should be reflected here
 
-    let mut world = life::world::World::new(w, h);
+    let mut simulation = Simulation::new(life::world::World::new(w, h), 32);
 
     //TMP the render engine is hte holder of world... WIP : change to smthg else...
-    let mut re = render::RenderBuffer::new(&world.image); // TMP as u16 -> find better ways...
+    let re = render::RenderBuffer::new(&simulation.world.image, 60); // TMP as u16 -> find better ways...
 
-    render::run(&mut re, &mut world).await;
+    let engine = engine::Engine {
+        display: RefCell::new(re),
+        simulation: RefCell::new(simulation),
+    };
+
+    engine.async_run().await;
+
+    // render::run(&mut re, &mut world).await;
+
+    // API GOAL:
+    // display::show(
+    //      simulation::run(world, limiter /* some kind of customisable CPU limiter*/),
+    //      /*optional gui ? */
+    //      /* optional audio ?  ==> HOW ? maybe different API with hecs ?? */
+    //      60 /*FPS : the traditional GPU limiter */
+    // ).await;
+    // OR
+    // let engine = Engine{ display: , audio: , simulation: }
+    // engine.run().await;
 }

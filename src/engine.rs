@@ -1,27 +1,48 @@
-// // #![feature(test)]
-// // extern crate test;
-//
-// use std::time::Duration;
-//
-// pub trait Updatable<I, O> {
-//     fn update<I, O>(&mut self, elapsed: Duration, inputs: I, outputs: O);
-// }
-//
-// struct Engine<I,O> {
-//     pub inner:
-//     //TODO : rate... time limit, etc.
-// }
-//
-// impl Engine<I, O>{
-//     pub fn run<I, O>(i: I) -> O {
-//         let mut o: O;
-//         loop {
-//             nested.update(Duration::new(0,0), &i, &mut o);
-//         }
-//         return o;
-//     }
-// }
-//
+use crate::render::{RenderBuffer, Renderable};
+use crate::simulation::Simulation;
+use macroquad::prelude::{get_frame_time, next_frame};
+use std::cell::RefCell;
+use std::time::Duration;
+
+/// This is a struct containing all the side-effects possible in the engine
+pub(crate) struct Engine {
+    pub display: RefCell<RenderBuffer>,
+    pub simulation: RefCell<Simulation>, //TODO : rate... time limit, etc.
+}
+
+impl Engine {
+    pub async fn async_run(&self) {
+        //internal mutability for engine parts
+        let mut screen = self.display.borrow_mut();
+        let mut simulation = self.simulation.borrow_mut();
+
+        // calling old render runner
+        // render::run(
+        //     &mut screen,
+        //     &mut world
+        // ).await
+        // TODO : generic throttled loop here
+        loop {
+            let available_sim_duration = screen
+                .target_frame_time()
+                .saturating_sub(screen.last_frame_time());
+
+            //TMP render update driving simulation update
+            // simulation.update();
+
+            //TODO : call run instead...
+            simulation.run(available_sim_duration);
+
+            //TMP : render here instead of update ? because we want to avoid hold world ref in renderbuffer ?
+            screen.update(simulation.render()).await;
+
+            println!("FPS: {}", screen.current_fps());
+
+            println!("UPS: {}", simulation.get_ups());
+        }
+    }
+}
+
 //
 //
 // //Todo : nestable engines...
