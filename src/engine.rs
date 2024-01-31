@@ -36,9 +36,9 @@ impl Engine {
             //TMP : render here instead of update ? because we want to avoid hold world ref in renderbuffer ?
             screen.update(simulation.render()).await;
 
-            println!("FPS: {}", screen.current_fps());
+            // println!("FPS: {}", screen.current_fps());
 
-            println!("UPS: {}", simulation.get_ups());
+            // println!("UPS: {}", simulation.get_ups());
         }
     }
 }
