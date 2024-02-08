@@ -8,8 +8,11 @@ pub(crate) fn usize_from_i32(v: i32) -> usize {
     usize::try_from(v).unwrap()
 }
 
-fn u16_from_usize(v: usize) -> u16 {
+pub(crate) fn u16_from_usize(v: usize) -> u16 {
     u16::try_from(v).unwrap()
+}
+pub(crate) fn usize_from_u16(v: u16) -> usize {
+    usize::try_from(v).unwrap()
 }
 
 //TODO : a grid of images (u16 * u16), modifiable as a single image ( ...
@@ -24,6 +27,8 @@ pub struct World {
 
 impl World {
     //size of your world depend on your platform
+
+    #[allow(dead_code)]
     pub fn new(world_width: usize, world_height: usize) -> World {
         let world_size = match world_width.overflowing_mul(world_height) {
             (res, false) => res,
@@ -50,6 +55,7 @@ impl World {
         return world;
     }
 
+    #[allow(dead_code)]
     pub(crate) fn update(&mut self, _elapsed: Duration) {
         let w = self.width;
         let h = self.height;

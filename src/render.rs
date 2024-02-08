@@ -49,6 +49,7 @@ impl RenderBuffer {
         Duration::from_secs_f32(get_frame_time())
     }
 
+    #[allow(dead_code)]
     pub fn current_fps(&self) -> i32 {
         get_fps()
         //TODO : average these over time... in update ? only when used ?

@@ -1,40 +1,35 @@
 use crate::life::cell;
+use crate::life::world::usize_from_u16;
 use crate::render::Renderable;
-use macroquad::color::RED;
-use macroquad::prelude::{Color, Image};
-use std::mem::swap;
+use macroquad::prelude::Image;
 use std::time::Duration;
-
-pub struct ColorStateBuffer {
-    //TODO
-}
 
 pub struct Quad {
     pub image: Image,
-    next: Image, //TODO : ColorStateBuffer might be simpler to work with && safer
+    next: Image, //TODO : [Color] might be simpler to work with (see Image::update())
+    next_color: Vec<macroquad::color::Color>,
 }
 
 impl Quad {
     pub fn new(width: u16, height: u16) -> Quad {
-        let dead_color = Color::from_hex(cell::to_hex(cell::color(cell::State::Dead)));
+        //TMP debug
+        let dead_color = cell::color(cell::State::Dead);
         println!("DEAD: {:#?}", dead_color);
-        println!(
-            "ALIVE: {:#?}",
-            Color::from_hex(cell::to_hex(cell::color(cell::State::Alive)))
-        );
+        println!("ALIVE: {:#?}", cell::color(cell::State::Alive));
 
         let mut new_quad = Image::gen_image_color(width, height, dead_color);
 
         //TODO : data initializer as parameter...
         for pix in new_quad.get_image_data_mut().iter_mut() {
             if macroquad::prelude::rand::gen_range(0, 5) == 0 {
-                *pix = cell::color(cell::State::Alive);
+                *pix = cell::color(cell::State::Alive).into();
             }
         }
 
         Quad {
             image: new_quad,
             next: Image::empty(),
+            next_color: vec![], // TODO : proper size !
         }
     }
 
@@ -44,29 +39,41 @@ impl Quad {
 
         self.next.clone_from(&self.image);
 
+        //TODO : to simplify
+        // for y in 0..h {
+        //     for x in 0..w {
+        //         //TODO : check overflow here...
+        //         self.next_color[usize_from_u16(y) * usize_from_u16(w) + usize_from_u16(x)] = cell::update_on_quad(self.image.get_image_data(), x as i32, y as i32, w, h);
+        //     }
+        // }
+
         let buffer = self.next.get_image_data_mut();
 
         for y in 0..h {
             for x in 0..w {
                 //TODO : check overflow here...
-                buffer[(y as usize * w as usize + x as usize)] =
-                    cell::update_on_quad(buffer, x as i32, y as i32, w, h);
+                buffer[usize_from_u16(y) * usize_from_u16(w) + usize_from_u16(x)] =
+                    cell::update_on_quad(self.image.get_image_data(), x as i32, y as i32, w, h)
+                        .into();
             }
         }
 
         self.swapbuf();
     }
 
-    //TODO : safe pixel accessor...
+    //TODO : safe pixel accessor... NO NEED ? use Image::update([Color]) instead...
 
     pub fn swapbuf(&mut self) {
         //TODO : if image were sized, we could std::mem::replace
         // self.image.get_image_data_mut().copy_from_slice(self.next.get_image_data());
 
-        for i in 0..self.next.get_image_data().len() {
-            // TODO : move this somewhere else ?
-            self.image.get_image_data_mut()[i] = self.next.get_image_data()[i];
-        }
+        // other option: basic cloning
+        self.image.clone_from(&self.next);
+
+        // for i in 0..self.next.get_image_data().len() {
+        //     // TODO : move this somewhere else ?
+        //     self.image.get_image_data_mut()[i] = self.next.get_image_data()[i];
+        // }
     }
 }
 
@@ -75,18 +82,31 @@ mod tests {
     use crate::life::cell;
     use crate::life::cell::State;
     use crate::life::quad::Quad;
-    use macroquad::prelude::Color;
+    use std::time::Duration;
 
-    fn mini_quad() {
-        let q = Quad::new(1, 1);
+    #[test]
+    fn lonely_dying_quad() {
+        let mut q = Quad::new(1, 1);
 
-        assert_eq!(
-            q.image.get_pixel(1, 1),
-            Color::from_hex(cell::to_hex(cell::color(State::Dead)))
-        )
+        q.image.update(&[cell::ALIVE]);
+
+        //one update
+        q.update(Duration::new(0, 0));
+
+        assert_eq!(q.image.get_pixel(0, 0), cell::DEAD)
     }
     #[test]
-    fn check_stationary_one() {}
+    fn check_stationary_one() {
+        let mut q = Quad::new(2, 2);
+        //permanent square in quad
+        q.image.update(&[cell::ALIVE; 4]);
 
-    fn check_oscillating_one() {}
+        //one update
+        q.update(Duration::new(0, 0));
+
+        assert_eq!(q.image.get_pixel(0, 0), cell::color(State::Alive));
+        assert_eq!(q.image.get_pixel(0, 1), cell::color(State::Alive));
+        assert_eq!(q.image.get_pixel(1, 0), cell::color(State::Alive));
+        assert_eq!(q.image.get_pixel(1, 1), cell::color(State::Alive));
+    }
 }

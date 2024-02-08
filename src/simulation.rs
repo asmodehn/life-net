@@ -4,8 +4,7 @@
 // - and more systems later...
 
 use crate::life::quad::Quad;
-use crate::life::world::World;
-use crate::render::{RenderBuffer, Renderable};
+use crate::render::Renderable;
 use macroquad::prelude::Image;
 use std::cmp::{max, min};
 use std::time::{Duration, Instant};
@@ -33,11 +32,9 @@ impl Simulation {
         }
     }
     pub(crate) fn update(&mut self) {
-        let updated = self.world.update(self.last_now.elapsed());
+        self.world.update(self.last_now.elapsed());
 
         self.last_now = Instant::now();
-
-        updated
     }
     /// runs update() the simulation for a certain duration
     /// minimum is one update() call.
@@ -65,9 +62,9 @@ impl Simulation {
         // println!("CALLS: {}", calls);
     }
 
-    pub fn get_ups(&self) -> i32 {
-        (self.update_count_since_last_second as f32 / self.last_second.elapsed().as_secs_f32())
-            as i32
+    #[allow(dead_code)]
+    pub fn get_ups(&self) -> f32 {
+        self.update_count_since_last_second as f32 / self.last_second.elapsed().as_secs_f32()
     }
 }
 
@@ -75,6 +72,6 @@ impl Renderable for Simulation {
     fn render(&mut self) -> &Image {
         // self.world.render()
         // no need to render with a quad
-        &self.world.image
+        &self.world.image // TODO : call swapbuf here, instead of every update...
     }
 }

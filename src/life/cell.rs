@@ -1,6 +1,7 @@
 use crate::life::cell::State::{Alive, Dead};
 use crate::life::world::usize_from_i32;
-use macroquad::color::Color;
+use macroquad::color;
+use macroquad::color_u8;
 use std::{fmt, mem};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -9,40 +10,24 @@ pub enum State {
     Dead,
 }
 
-#[derive(Copy, Clone, Debug)]
-struct ColorState {
-    //CAREFUL with alpha !!! ( 0.0 <-> transparent <-> 0u8 )
-    //Ref: BUG in from_hex https://github.com/not-fl3/macroquad/issues/695
-    color: Color,
-    state: State,
-}
-
-impl ColorState {
-    fn new(color: Color, state: State) -> ColorState {
-        ColorState { color, state }
-    }
-}
-
-pub(crate) fn color(s: State) -> [u8; 4] {
-    match s {
-        State::Alive => [0u8, 0u8, 0u8, 255u8],
-        State::Dead => [255u8, 255u8, 255u8, 255u8],
-    }
-}
-
-// TODO : color to 4* f32 -> Vec4, to make macroquad usage simpler (?)
+pub const ALIVE: color::Color = color::BLACK;
+pub const DEAD: color::Color = color::WHITE;
 
 pub(crate) fn state(color: &[u8; 4]) -> State {
-    match *color {
-        [0u8, 0u8, 0u8, 255u8] => Alive,
-        [255u8, 255u8, 255u8, 255u8] => Dead,
-        [_, _, _, _] => Dead,
+    if <color::Color as Into<[u8; 4]>>::into(ALIVE) == *color {
+        Alive
+    } else if <color::Color as Into<[u8; 4]>>::into(DEAD) == *color {
+        Dead
+    } else {
+        Dead
     }
 }
 
-pub(crate) fn to_hex(color: [u8; 4]) -> u32 {
-    //TODO : use u32::from_??_bytes instead...
-    unsafe { mem::transmute::<[u8; 4], u32>(color) }
+pub(crate) fn color(state: State) -> color::Color {
+    match state {
+        Alive => ALIVE,
+        Dead => DEAD,
+    }
 }
 
 fn neighbours_count_on_quad(cells: &[[u8; 4]], x: i32, y: i32, w: u16, h: u16) -> i32 {
@@ -60,7 +45,7 @@ fn neighbours_count_on_quad(cells: &[[u8; 4]], x: i32, y: i32, w: u16, h: u16) -
             }
 
             let neighbor = cells[usize_from_i32((y + j) * w as i32 + (x + i))];
-            if state(&neighbor) == State::Alive {
+            if ALIVE == neighbor.into() {
                 neighbors_count += 1;
             }
         }
@@ -91,25 +76,25 @@ fn neighbours_count(cells: &Vec<State>, x: i32, y: i32, w: usize, h: usize) -> i
     return neighbors_count;
 }
 
-pub fn update_on_quad(cells: &[[u8; 4]], x: i32, y: i32, w: u16, h: u16) -> [u8; 4] {
+pub fn update_on_quad(cells: &[[u8; 4]], x: i32, y: i32, w: u16, h: u16) -> color::Color {
     let neighbors_count = neighbours_count_on_quad(&cells, x, y, w, h);
 
-    let current_cell = cells[(y * w as i32 + x) as usize];
+    let current_cell = cells[usize_from_i32(y * w as i32 + x)];
 
     //TODO : optimize by only taking care of case where teh cell actually changes state...
     match (state(&current_cell), neighbors_count) {
         // Rule 1: Any live cell with fewer than two live neighbours
         // dies, as if caused by underpopulation.
-        (State::Alive, x) if x < 2 => color(State::Dead),
+        (State::Alive, x) if x < 2 => DEAD,
         // Rule 2: Any live cell with two or three live neighbours
         // lives on to the next generation.
-        (State::Alive, 2) | (State::Alive, 3) => color(State::Alive),
+        (State::Alive, 2) | (State::Alive, 3) => ALIVE,
         // Rule 3: Any live cell with more than three live
         // neighbours dies, as if by overpopulation.
-        (State::Alive, x) if x > 3 => color(State::Dead),
+        (State::Alive, x) if x > 3 => DEAD,
         // Rule 4: Any dead cell with exactly three live neighbours
         // becomes a live cell, as if by reproduction.
-        (State::Dead, 3) => color(State::Alive),
+        (State::Dead, 3) => ALIVE,
         // All other cells remain in the same state.
         (otherwise, _) => color(otherwise),
     }
@@ -143,7 +128,6 @@ pub fn update(cells: &Vec<State>, x: i32, y: i32, w: usize, h: usize) -> State {
 mod tests {
     use crate::life::cell;
     use crate::life::cell::color;
-    use macroquad::color;
 
     #[test]
     fn check_rule1() {
@@ -172,8 +156,8 @@ mod tests {
 
     #[test]
     fn check_rule1_on_quad() {
-        let a = color(cell::State::Alive);
-        let d = color(cell::State::Dead);
+        let a: [u8; 4] = color(cell::State::Alive).into();
+        let d: [u8; 4] = color(cell::State::Dead).into();
         // all possible cases with 0 or 1 neighbour (<2)
         let alone = [d, d, d, d, a, d, d, d, d];
         let nn = [d, a, d, d, a, d, d, d, d];
@@ -248,8 +232,8 @@ mod tests {
 
     #[test]
     fn check_rule3_on_quad() {
-        let a = color(cell::State::Alive);
-        let d = color(cell::State::Dead);
+        let a: [u8; 4] = color(cell::State::Alive).into();
+        let d: [u8; 4] = color(cell::State::Dead).into();
         // all possible cases with 4, 5, 6, 7 or 8 neighbours (>3)
         let surrounded = [a, a, a, a, a, a, a, a, a];
         let seven = vec![
@@ -291,8 +275,8 @@ mod tests {
 
     #[test]
     fn check_rule2_on_quad() {
-        let a = color(cell::State::Alive);
-        let d = color(cell::State::Dead);
+        let a: [u8; 4] = color(cell::State::Alive).into();
+        let d: [u8; 4] = color(cell::State::Dead).into();
 
         //TODO : all combinations for 2 and 3...
         let two = [d, a, a, d, a, d, d, d, d];
@@ -320,8 +304,8 @@ mod tests {
 
     #[test]
     fn check_rule4_on_quad() {
-        let a = color(cell::State::Alive);
-        let d = color(cell::State::Dead);
+        let a: [u8; 4] = color(cell::State::Alive).into();
+        let d: [u8; 4] = color(cell::State::Dead).into();
 
         let three = [d, d, a, d, d, a, a, d, d];
 
@@ -342,8 +326,8 @@ mod tests {
 
     #[test]
     fn dead_alone_check_on_quad() {
-        let a = color(cell::State::Alive);
-        let d = color(cell::State::Dead);
+        let a: [u8; 4] = color(cell::State::Alive).into();
+        let d: [u8; 4] = color(cell::State::Dead).into();
 
         let two = [d, d, a, d, d, d, a, d, d];
         assert_eq!(
@@ -363,8 +347,8 @@ mod tests {
 
     #[test]
     fn dead_in_crowd_check_on_quad() {
-        let a = color(cell::State::Alive);
-        let d = color(cell::State::Dead);
+        let a: [u8; 4] = color(cell::State::Alive).into();
+        let d: [u8; 4] = color(cell::State::Dead).into();
 
         let four = [d, d, a, d, d, a, a, d, a];
         assert_eq!(

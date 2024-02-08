@@ -28,13 +28,12 @@ async fn main() {
     println!("{} {}", w, h);
 
     //We want a functional architecture
-    // => the structure of the nested loops' states should be reflected here
+    // => the inner structure of the nested loops' states should probably be reflected here somehow ?
 
     // let mut simulation = Simulation::new(life::world::World::new(w, h), 32);
     let simulation = Simulation::new(life::quad::Quad::new(w, h), 32);
 
-    //TMP the render engine is hte holder of world... WIP : change to smthg else...
-    let re = render::RenderBuffer::new(&simulation.world.image, 60); // TMP as u16 -> find better ways...
+    let re = render::RenderBuffer::new(&simulation.world.image, 60);
 
     let engine = engine::Engine {
         display: RefCell::new(re),
