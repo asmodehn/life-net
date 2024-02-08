@@ -14,12 +14,7 @@ pub struct Quad {
 
 impl Quad {
     pub fn new(width: u16, height: u16) -> Quad {
-        //TMP debug
-        let dead_color = cell::color(cell::State::Dead);
-        println!("DEAD: {:#?}", dead_color);
-        println!("ALIVE: {:#?}", cell::color(cell::State::Alive));
-
-        let mut new_quad = Image::gen_image_color(width, height, dead_color);
+        let mut new_quad = Image::gen_image_color(width, height, DEAD);
 
         let next_vec = vec![DEAD; usize_from_u16(width) * usize_from_u16(height)];
 
@@ -59,6 +54,9 @@ mod tests {
     use crate::life::quad::Quad;
     use std::time::Duration;
 
+    use super::*;
+    use test::Bencher;
+
     #[test]
     fn lonely_dying_quad() {
         let mut q = Quad::new(1, 1);
@@ -83,5 +81,26 @@ mod tests {
         assert_eq!(q.image.get_pixel(0, 1), cell::color(State::Alive));
         assert_eq!(q.image.get_pixel(1, 0), cell::color(State::Alive));
         assert_eq!(q.image.get_pixel(1, 1), cell::color(State::Alive));
+    }
+
+    #[bench]
+    fn bench_update_064_064(b: &mut Bencher) {
+        let mut q = Quad::new(64, 64);
+
+        b.iter(|| q.update(Duration::new(0, 0)));
+    }
+
+    #[bench]
+    fn bench_update_128_128(b: &mut Bencher) {
+        let mut q = Quad::new(128, 128);
+
+        b.iter(|| q.update(Duration::new(0, 0)));
+    }
+
+    #[bench]
+    fn bench_update_256_256(b: &mut Bencher) {
+        let mut q = Quad::new(256, 256);
+
+        b.iter(|| q.update(Duration::new(0, 0)));
     }
 }

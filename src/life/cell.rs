@@ -128,6 +128,11 @@ pub fn update(cells: &Vec<State>, x: i32, y: i32, w: usize, h: usize) -> State {
 mod tests {
     use crate::life::cell;
     use crate::life::cell::color;
+    use crate::life::quad::Quad;
+    use std::time::Duration;
+    use test::Bencher;
+
+    use cell::{ALIVE, DEAD};
 
     #[test]
     fn check_rule1() {
@@ -347,13 +352,33 @@ mod tests {
 
     #[test]
     fn dead_in_crowd_check_on_quad() {
-        let a: [u8; 4] = color(cell::State::Alive).into();
-        let d: [u8; 4] = color(cell::State::Dead).into();
+        let a: [u8; 4] = ALIVE.into();
+        let d: [u8; 4] = DEAD.into();
 
         let four = [d, d, a, d, d, a, a, d, a];
         assert_eq!(
             cell::update_on_quad(&four, 1, 1, 3, 3),
             color(cell::State::Dead)
         );
+    }
+
+    #[bench]
+    fn bench_update(b: &mut Bencher) {
+        let a = cell::State::Alive;
+        let d = cell::State::Dead;
+
+        let w = vec![d, d, a, d, d, a, a, d, a];
+
+        b.iter(|| cell::update(&w, 1, 1, 3, 3));
+    }
+
+    #[bench]
+    fn bench_update_on_quad(b: &mut Bencher) {
+        let a: [u8; 4] = ALIVE.into();
+        let d: [u8; 4] = DEAD.into();
+
+        let w = [d, d, a, d, d, a, a, d, a];
+
+        b.iter(|| cell::update_on_quad(&w, 1, 1, 3, 3));
     }
 }

@@ -1,3 +1,6 @@
+#![feature(test)]
+extern crate test;
+
 mod engine;
 mod life;
 mod render;
