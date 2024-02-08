@@ -1,13 +1,15 @@
 use crate::life::cell;
+use crate::life::cell::{ALIVE, DEAD};
 use crate::life::world::usize_from_u16;
 use crate::render::Renderable;
+use macroquad::color::Color;
 use macroquad::prelude::Image;
 use std::time::Duration;
 
 pub struct Quad {
     pub image: Image,
-    next: Image, //TODO : [Color] might be simpler to work with (see Image::update())
-    next_color: Vec<macroquad::color::Color>,
+    next: Vec<Color>, // dynamic or/and on the heap, just to bypass parameterizing with size...
+                      //TODO : try grid crate here ??
 }
 
 impl Quad {
@@ -19,6 +21,8 @@ impl Quad {
 
         let mut new_quad = Image::gen_image_color(width, height, dead_color);
 
+        let next_vec = vec![DEAD; usize_from_u16(width) * usize_from_u16(height)];
+
         //TODO : data initializer as parameter...
         for pix in new_quad.get_image_data_mut().iter_mut() {
             if macroquad::prelude::rand::gen_range(0, 5) == 0 {
@@ -28,8 +32,7 @@ impl Quad {
 
         Quad {
             image: new_quad,
-            next: Image::empty(),
-            next_color: vec![], // TODO : proper size !
+            next: next_vec,
         }
     }
 
@@ -37,43 +40,15 @@ impl Quad {
         let w = self.image.width;
         let h = self.image.height;
 
-        self.next.clone_from(&self.image);
-
-        //TODO : to simplify
-        // for y in 0..h {
-        //     for x in 0..w {
-        //         //TODO : check overflow here...
-        //         self.next_color[usize_from_u16(y) * usize_from_u16(w) + usize_from_u16(x)] = cell::update_on_quad(self.image.get_image_data(), x as i32, y as i32, w, h);
-        //     }
-        // }
-
-        let buffer = self.next.get_image_data_mut();
-
         for y in 0..h {
             for x in 0..w {
                 //TODO : check overflow here...
-                buffer[usize_from_u16(y) * usize_from_u16(w) + usize_from_u16(x)] =
-                    cell::update_on_quad(self.image.get_image_data(), x as i32, y as i32, w, h)
-                        .into();
+                self.next[usize_from_u16(y) * usize_from_u16(w) + usize_from_u16(x)] =
+                    cell::update_on_quad(self.image.get_image_data(), x as i32, y as i32, w, h);
             }
         }
 
-        self.swapbuf();
-    }
-
-    //TODO : safe pixel accessor... NO NEED ? use Image::update([Color]) instead...
-
-    pub fn swapbuf(&mut self) {
-        //TODO : if image were sized, we could std::mem::replace
-        // self.image.get_image_data_mut().copy_from_slice(self.next.get_image_data());
-
-        // other option: basic cloning
-        self.image.clone_from(&self.next);
-
-        // for i in 0..self.next.get_image_data().len() {
-        //     // TODO : move this somewhere else ?
-        //     self.image.get_image_data_mut()[i] = self.next.get_image_data()[i];
-        // }
+        self.image.update(&self.next.as_slice());
     }
 }
 

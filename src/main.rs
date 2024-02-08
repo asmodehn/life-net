@@ -11,7 +11,7 @@ fn window_conf() -> Conf {
     Conf {
         window_title: "Life Net".to_owned(),
         window_width: 256,
-        window_height: 128,
+        window_height: 256,
         fullscreen: false,
         window_resizable: false,
         ..Default::default()
