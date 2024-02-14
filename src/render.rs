@@ -1,4 +1,4 @@
-use macroquad::color::WHITE;
+use macroquad::color::{RED, WHITE, YELLOW};
 use macroquad::prelude::{
     clear_background, draw_texture, get_frame_time, next_frame, Image, Texture2D,
 };
@@ -36,11 +36,14 @@ impl RenderBuffer {
     // OR: a way to "link" image and texture...
 
     pub(crate) async fn update(&mut self, image: &Image) {
-        clear_background(WHITE);
+        clear_background(RED);
 
         self.texture.update(image);
 
-        draw_texture(&self.texture, 0., 0., WHITE);
+        draw_texture(&self.texture, 0., 0., YELLOW);
+
+        //TODO : on screen / window instead of log...
+        // println!("FPS: {}", self.current_fps());
 
         next_frame().await;
     }

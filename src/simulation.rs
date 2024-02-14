@@ -6,15 +6,18 @@
 use crate::life::quad::Quad;
 use crate::render::Renderable;
 use macroquad::prelude::Image;
-use std::cmp::{max, min};
 use std::time::{Duration, Instant};
 
+#[allow(dead_code)]
+trait Stepper {
+    fn next() -> impl Stepper;
+}
+
 pub(crate) struct Simulation {
-    last_now: Instant,
     pub(crate) world: Quad, // TODO : that is where we hook hecs or more complex game-world mgmt things...
-    max_update_duration: Duration,
     last_second: Instant,
     update_count_since_last_second: u32,
+    last_ups: f32,
 }
 
 impl Simulation {
@@ -24,47 +27,32 @@ impl Simulation {
         println!("MAX_UPDATE_DUR {}", max_update_duration.as_secs_f32());
 
         Simulation {
-            last_now: Instant::now(),
             world: quad,
-            max_update_duration,
             last_second: Instant::now(),
             update_count_since_last_second: 0,
+            last_ups: 0.,
         }
     }
-    pub(crate) fn update(&mut self) {
-        self.world.update(self.last_now.elapsed());
 
-        self.last_now = Instant::now();
-    }
-    /// runs update() the simulation for a certain duration
-    /// minimum is one update() call.
-    pub fn run(&mut self, available_duration: Duration) {
-        // measurement of ups is here since this method is called repeatedly by the engine.
+    fn ups_count(&mut self) {
         if self.last_second.elapsed() > Duration::new(1, 0) {
+            self.last_ups = self.update_count_since_last_second as f32
+                / self.last_second.elapsed().as_secs_f32();
             self.last_second = Instant::now();
             self.update_count_since_last_second = 0;
         }
-
-        let start = Instant::now();
-
-        let max_duration = min(available_duration, self.max_update_duration);
-        // println!("MAX_DUR {}", max_duration.as_secs_f32());
-        let mut calls = 0;
-
-        // println!("Run Sim for {} secs...", max_duration.as_secs_f32());
-        while calls == 0 || start.elapsed() <= max_duration {
-            calls += 1;
-            self.update();
-        }
-
-        self.update_count_since_last_second += calls;
-
-        // println!("CALLS: {}", calls);
+        self.update_count_since_last_second += 1;
     }
 
-    #[allow(dead_code)]
+    pub(crate) fn update(&mut self, elapsed: Duration, available: Duration) {
+        // measurement of ups is here since this method is called repeatedly by the engine.
+        self.ups_count();
+
+        self.world.update(elapsed, available);
+    }
+
     pub fn get_ups(&self) -> f32 {
-        self.update_count_since_last_second as f32 / self.last_second.elapsed().as_secs_f32()
+        self.last_ups
     }
 }
 
@@ -73,5 +61,45 @@ impl Renderable for Simulation {
         // self.world.render()
         // no need to render with a quad
         &self.world.image // TODO : call swapbuf here, instead of every update...
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::life::cell;
+    use crate::life::quad::Quad;
+    use std::time::Duration;
+
+    use crate::simulation::Simulation;
+    use test::Bencher;
+
+    #[test]
+    fn lonely_dying_quad() {
+        let mut q = Quad::new(1, 1);
+        q.image.update(&[cell::ALIVE]);
+
+        let mut s = Simulation::new(q, 1);
+
+        //one update
+        s.update(Duration::new(0, 0), Duration::MAX);
+
+        assert_eq!(s.world.image.get_pixel(0, 0), cell::DEAD)
+    }
+
+    #[test]
+    fn check_stationary_one() {
+        let mut q = Quad::new(2, 2);
+        //permanent square in quad
+        q.image.update(&[cell::ALIVE; 4]);
+
+        let mut s = Simulation::new(q, 1);
+
+        //one update
+        s.update(Duration::new(0, 0), Duration::MAX);
+
+        assert_eq!(s.world.image.get_pixel(0, 0), cell::ALIVE);
+        assert_eq!(s.world.image.get_pixel(0, 1), cell::ALIVE);
+        assert_eq!(s.world.image.get_pixel(1, 0), cell::ALIVE);
+        assert_eq!(s.world.image.get_pixel(1, 1), cell::ALIVE);
     }
 }

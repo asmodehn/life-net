@@ -40,7 +40,7 @@ or at least one loop with activable subsystems depending on time passed, to emul
 
 Once our game is ready to be played by multiple people we need to setup network communication. Two ideas:
 - shared game events (eventually consistent, non-competitive since no referee, potentially slow/unstable )
-- transient state update (non-consistent -> cosmetic only, non-competitive since no referee, potentially fast)
+- transient state Update (non-consistent -> cosmetic only, non-competitive since no referee, potentially fast)
 
 Depending on the choices made, the game design will need to be adapted to the capabilities of the network engine.
 

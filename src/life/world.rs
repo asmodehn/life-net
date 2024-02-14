@@ -15,7 +15,7 @@ pub(crate) fn usize_from_u16(v: u16) -> usize {
     usize::try_from(v).unwrap()
 }
 
-//TODO : a grid of images (u16 * u16), modifiable as a single image ( ...
+//TODO : a grid of quads (u16 * u16), modifiable as a single image ...
 
 pub struct World {
     pub width: usize,
@@ -56,7 +56,7 @@ impl World {
     }
 
     #[allow(dead_code)]
-    pub(crate) fn update(&mut self, _elapsed: Duration) {
+    pub(crate) fn update(&mut self, _elapsed: Duration, _available: Duration) {
         let w = self.width;
         let h = self.height;
 

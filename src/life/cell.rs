@@ -1,8 +1,6 @@
 use crate::life::cell::State::{Alive, Dead};
 use crate::life::world::usize_from_i32;
 use macroquad::color;
-use macroquad::color_u8;
-use std::{fmt, mem};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum State {
@@ -128,8 +126,6 @@ pub fn update(cells: &Vec<State>, x: i32, y: i32, w: usize, h: usize) -> State {
 mod tests {
     use crate::life::cell;
     use crate::life::cell::color;
-    use crate::life::quad::Quad;
-    use std::time::Duration;
     use test::Bencher;
 
     use cell::{ALIVE, DEAD};

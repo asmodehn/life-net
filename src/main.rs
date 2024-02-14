@@ -1,14 +1,16 @@
 #![feature(test)]
+#![feature(slice_pattern)]
+extern crate core;
 extern crate test;
 
 mod engine;
 mod life;
+mod perf;
 mod render;
 mod simulation;
 
 use crate::simulation::Simulation;
 use macroquad::prelude::*;
-use std::cell::RefCell;
 
 fn window_conf() -> Conf {
     Conf {
@@ -38,10 +40,7 @@ async fn main() {
 
     let re = render::RenderBuffer::new(&simulation.world.image, 60);
 
-    let engine = engine::Engine {
-        display: RefCell::new(re),
-        simulation: RefCell::new(simulation),
-    };
+    let engine = engine::Engine::new(re, simulation);
 
     engine.async_run().await;
 
