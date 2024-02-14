@@ -40,7 +40,7 @@ async fn main() {
 
     let re = render::RenderBuffer::new(&simulation.world.image, 60);
 
-    let engine = engine::Engine::new(re, simulation);
+    let mut engine = engine::Engine::new(re, simulation);
 
     engine.async_run().await;
 

@@ -4,8 +4,10 @@
 // - and more systems later...
 
 use crate::life::quad::Quad;
+use crate::perf::DurationAverage;
 use crate::render::Renderable;
 use macroquad::prelude::Image;
+use std::cmp::{max, min};
 use std::time::{Duration, Instant};
 
 #[allow(dead_code)]
@@ -13,11 +15,21 @@ trait Stepper {
     fn next() -> impl Stepper;
 }
 
+#[derive(Debug, PartialEq)]
+enum UpdateKind {
+    Total,
+    Partial,
+}
+
 pub(crate) struct Simulation {
     pub(crate) world: Quad, // TODO : that is where we hook hecs or more complex game-world mgmt things...
+    max_update_duration: Duration,
     last_second: Instant,
     update_count_since_last_second: u32,
     last_ups: f32,
+
+    average_duration: DurationAverage,
+    update: UpdateKind,
 }
 
 impl Simulation {
@@ -28,9 +40,12 @@ impl Simulation {
 
         Simulation {
             world: quad,
+            max_update_duration,
             last_second: Instant::now(),
             update_count_since_last_second: 0,
             last_ups: 0.,
+            average_duration: DurationAverage::default(),
+            update: UpdateKind::Total,
         }
     }
 
@@ -47,8 +62,42 @@ impl Simulation {
     pub(crate) fn update(&mut self, elapsed: Duration, available: Duration) {
         // measurement of ups is here since this method is called repeatedly by the engine.
         self.ups_count();
+        // if total is impossible, Simulation will do partial if implemented/possible...
+        // => fractional update count possible
 
-        self.world.update(elapsed, available);
+        // self.world.update(elapsed, available);
+
+        self.average_duration.timed_start();
+
+        if self.average_duration.avg().unwrap_or_default() < available {
+            if self.update == UpdateKind::Partial {
+                // println!("{:?} => ATTEMPT COMPLETE UPDATE IN ONE CALL", available);
+                self.update = UpdateKind::Total;
+            }
+
+            self.world
+                .update(elapsed, available, |quad: &Quad| quad.completed());
+
+            // self.next
+            //     .compute(&mut self.image, |partial_quad: &crate::life::quad::partial::PartialQuad| {
+            //         partial_quad.is_ready()
+            //     });
+        } else {
+            if self.update == UpdateKind::Total {
+                // println!("{:?} => NOT ENOUGH TIME FOR FULL UPDATE", available);
+                self.update = UpdateKind::Partial;
+            }
+            self.world.update(elapsed, available, |_quad: &Quad| {
+                self.average_duration.timed_elapsed() >= available
+            });
+
+            // self.next
+            //     .compute(&mut self.image, |_partial_quad: &crate::life::quad::partial::PartialQuad| {
+            //         self.average_duration.timed_elapsed() > available
+            //     });
+        }
+
+        self.average_duration.timed_stop();
     }
 
     pub fn get_ups(&self) -> f32 {
