@@ -2,16 +2,65 @@ use crate::life::cell;
 use crate::life::cell::{ALIVE, DEAD};
 use crate::perf::DurationAverage;
 use itertools::iproduct;
+use macroquad::color::Color;
 use macroquad::prelude::Image;
 use macroquad::rand::ChooseRandom;
-use std::time::Duration;
+use std::ops::Deref;
+use std::time::{Duration, Instant};
 
-pub struct Quad {
-    pub image: Image,
-    average_duration: DurationAverage,
+struct ImageUpdate {
+    width: u16,
+    height: u16,
     //TODO : try grid crate here ??
     original: Vec<[u8; 4]>,
     left_over: Vec<(u16, u16)>,
+}
+
+impl ImageUpdate {
+    pub fn new(image: &Image) -> Self {
+        let height = image.height;
+        let width = image.width;
+
+        let original = image.get_image_data().into();
+
+        let mut left_over: Vec<(u16, u16)> = iproduct!(0..height, 0..width).collect();
+        left_over.shuffle();
+
+        Self {
+            width,
+            height,
+            original,
+            left_over,
+        }
+    }
+
+    //TODO : pass iterator as parameter here...
+    fn step(&mut self) -> Option<(u16, u16, Color)> {
+        match self.left_over.pop() {
+            None => None,
+            Some((y, x)) => Some((
+                x,
+                y,
+                cell::update_on_quad(
+                    self.original.as_slice(),
+                    x as i32,
+                    y as i32,
+                    self.width,
+                    self.height,
+                ),
+            )), //CAREFUL : grid computation here must be exactly same as image...
+        }
+    }
+
+    fn completed(&self) -> bool {
+        self.left_over.is_empty()
+    }
+}
+
+pub struct Quad {
+    pub image: Image,
+    update: Option<ImageUpdate>,
+    updated_cb: fn(&mut Self),
 }
 
 impl Quad {
@@ -27,84 +76,109 @@ impl Quad {
 
         Self {
             image: new_quad,
-            average_duration: DurationAverage::default(),
-            original: vec![],
-            left_over: vec![],
+            update: None,
+            updated_cb: Self::reset_update,
         }
     }
 
-    pub(crate) fn update(
-        &mut self,
-        _elapsed: Duration,
-        available: Duration,
-        until: impl Fn(&Self) -> bool,
-    ) -> &mut Self {
-        self.average_duration.timed_start();
-        //
-        // if self.average_duration.avg().unwrap_or_default() < available {
-        //     if self.update == UpdateKind::partial {
-        //         // println!("{:?} => ATTEMPT COMPLETE UPDATE IN ONE CALL", available);
-        //         self.update = UpdateKind::total;
-        //     }
-        //     self.next
-        //         .compute(&mut self.image, |partial_quad: &PartialQuad| {
-        //             partial_quad.is_ready()
-        //         });
-        // } else {
-        //     if self.update == UpdateKind::total {
-        //         // println!("{:?} => NOT ENOUGH TIME FOR FULL UPDATE", available);
-        //         self.update = UpdateKind::partial;
-        //     }
-        //     self.next
-        //         .compute(&mut self.image, |_partial_quad: &PartialQuad| {
-        //             self.average_duration.timed_elapsed() > available
-        //         });
-        // }
-        //
+    fn with_updated_cb(self, cb: fn(&mut Self)) -> Self {
+        Self {
+            updated_cb: cb,
+            ..self
+        }
+    }
 
-        let w = self.image.width;
-        let h = self.image.height;
+    fn reset_update(&mut self) {
+        self.update = Some(ImageUpdate::new(&self.image));
+    }
 
+    pub fn is_updated(&self) -> bool {
+        self.update.as_ref().is_some_and(|iup| iup.completed())
+    }
+
+    // Maybe : cleaner API instead of Option ??
+    pub(crate) fn compute_once(&mut self) {
+        // TODO : pass iterator (explicit loop) THEN rename -> update !
         loop {
-            let mut nxt = self.left_over.pop();
-            if nxt.is_none() {
-                self.left_over = iproduct!(0..h, 0..w).collect();
-                self.left_over.shuffle();
-
-                self.original = self.image.get_image_data().into();
-
-                // continue immediately with another update without waiting.
-                // if a break is desired, `until` should be used.
-                nxt = self.left_over.pop();
+            //check for completion
+            if self.is_updated() {
+                (self.updated_cb)(self);
+                break;
+            }
+            //TODO : test: isn't this duplication ??
+            //(re)initialize if needed
+            if self.update.is_none() {
+                //start new update when necessary
+                self.update = Some(ImageUpdate::new(&self.image));
             }
 
-            let (y, x) = nxt.unwrap();
-            let updated_color = cell::update_on_quad(&*self.original, x as i32, y as i32, w, h);
-            //CAREFUL : grid computation here must be exactly same as image...
+            //attempt an update step
+            match self.update.as_mut().unwrap().step() {
+                None => {}
+                Some((x, y, cell_color)) => {
+                    self.image.set_pixel(x as u32, y as u32, cell_color);
+                }
+            }
+        }
+    }
 
-            self.image.set_pixel(x as u32, y as u32, updated_color);
+    //TODO : REMOVE => let caller handle the loop with update_until ??
+    // pub(crate) fn compute_until(&mut self, mut until: impl FnMut(&Self) -> bool) {
+    //     loop {
+    //         //check for completion
+    //         if self.is_updated() {
+    //             (self.updated_cb)(self);
+    //         }
+    //
+    //         //(re)initialize if needed
+    //         if self.update.is_none() {
+    //             //start new update when necessary
+    //             self.update = Some(ImageUpdate::new(&self.image));
+    //         }
+    //
+    //         //attempt an update step
+    //         match self.update.unwrap().step() {
+    //             None => {  },
+    //             Some((x, y, cell_color)) => {self.image.set_pixel(x as u32, y as u32, cell_color);}
+    //         }
+    //
+    //         //late until to ensure some progress
+    //         //can mutate itself !
+    //         if until(self) {
+    //             break
+    //         }
+    //     }
+    // }
 
-            //late exit to have initialization only inside the loop.
+    // TODO : rename -> update_until !
+    pub(crate) fn compute_once_or_until(&mut self, mut until: impl FnMut(&Self) -> bool) {
+        loop {
+            //check for completion
+            if self.is_updated() {
+                (self.updated_cb)(self);
+                break;
+            }
+
+            //(re)initialize if needed
+            if self.update.is_none() {
+                //start new update when necessary
+                self.update = Some(ImageUpdate::new(&self.image));
+            }
+
+            //attempt an update step
+            match self.update.as_mut().unwrap().step() {
+                None => {}
+                Some((x, y, cell_color)) => {
+                    self.image.set_pixel(x as u32, y as u32, cell_color);
+                }
+            }
+
+            //late until to ensure some progress
+            //can mutate itself !
             if until(self) {
                 break;
             }
         }
-
-        self.average_duration.timed_stop();
-        self
-    }
-
-    //TODO  :Stepper trait !
-    // pub fn prepare(&mut self) {
-    //
-    // }
-    //
-    // pub fn step(&mut self) {
-    //
-    // }
-    //
-    pub fn completed(&self) -> bool {
-        self.left_over.is_empty()
     }
 }
 
@@ -116,6 +190,7 @@ mod tests {
     use std::time::Duration;
 
     use test::Bencher;
+    use test::RunIgnored::No;
 
     #[test]
     fn cell_dies_alone() {
@@ -124,7 +199,7 @@ mod tests {
         q.image.update(&[cell::ALIVE]);
 
         //one update
-        q.update(Duration::new(0, 0), Duration::MAX, |qq| qq.completed());
+        q.compute_once();
 
         assert_eq!(q.image.get_pixel(0, 0), cell::DEAD)
     }
@@ -135,7 +210,7 @@ mod tests {
 
         q.image.update(&[cell::ALIVE]);
 
-        q.update(Duration::new(0, 0), Duration::MAX, |_s| true);
+        q.compute_once_or_until(|_s| true);
 
         assert_eq!(q.image.get_pixel(0, 0), DEAD);
     }
@@ -147,7 +222,7 @@ mod tests {
         q.image.update(&[cell::ALIVE; 4]);
 
         //one update
-        q.update(Duration::new(0, 0), Duration::MAX, |qq| qq.completed());
+        q.compute_once();
 
         assert_eq!(q.image.get_pixel(0, 0), cell::ALIVE);
         assert_eq!(q.image.get_pixel(0, 1), cell::ALIVE);
@@ -162,7 +237,7 @@ mod tests {
         q.image.update(&[cell::ALIVE; 4]);
 
         //one update
-        q.update(Duration::new(0, 0), Duration::MAX, |_s| true);
+        q.compute_once_or_until(|_s| true);
 
         assert_eq!(q.image.get_pixel(0, 0), cell::ALIVE);
         assert_eq!(q.image.get_pixel(0, 1), cell::ALIVE);
@@ -175,7 +250,7 @@ mod tests {
         let mut q = Quad::new(64, 64);
 
         b.iter(|| {
-            q.update(Duration::new(0, 0), Duration::MAX, move |qq| qq.completed());
+            q.compute_once();
         });
     }
 
@@ -184,7 +259,7 @@ mod tests {
         let mut q = Quad::new(128, 128);
 
         b.iter(|| {
-            q.update(Duration::new(0, 0), Duration::MAX, move |qq| qq.completed());
+            q.compute_once();
         });
     }
 
@@ -193,7 +268,7 @@ mod tests {
         let mut q = Quad::new(256, 256);
 
         b.iter(|| {
-            q.update(Duration::new(0, 0), Duration::MAX, move |qq| qq.completed());
+            q.compute_once();
         });
     }
 }

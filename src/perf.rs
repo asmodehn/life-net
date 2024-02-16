@@ -75,11 +75,15 @@ impl DurationAverage {
 
     pub fn with_measured(self, duration: Duration) -> Self {
         let mut s = self;
-        s.durations.push_back(duration);
-        if s.durations.len() > s.window_size as usize {
-            s.durations.pop_front();
-        }
+        s.record(duration);
         s
+    }
+
+    pub fn record(&mut self, duration: Duration) {
+        self.durations.push_back(duration);
+        if self.durations.len() > self.window_size as usize {
+            self.durations.pop_front();
+        }
     }
 
     pub fn avg(&self) -> Option<Duration> {

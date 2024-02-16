@@ -3,14 +3,15 @@
 extern crate core;
 extern crate test;
 
-mod engine;
+mod compute;
 mod life;
 mod perf;
 mod render;
-mod simulation;
 
-use crate::simulation::Simulation;
+use crate::compute::Compute;
+use crate::render::Renderable;
 use macroquad::prelude::*;
+use std::time::Instant;
 
 fn window_conf() -> Conf {
     Conf {
@@ -36,15 +37,10 @@ async fn main() {
     // => the inner structure of the nested loops' states should probably be reflected here somehow ?
 
     // let mut simulation = Simulation::new(life::world::World::new(w, h), 32);
-    let simulation = Simulation::new(life::quad::Quad::new(w, h), 32);
+    let mut simulation =
+        compute::discrete::DiscreteTime::new(life::quad::Quad::new(w, h)).with_max_update_rate(5.);
 
-    let re = render::RenderBuffer::new(&simulation.world.image, 60);
-
-    let mut engine = engine::Engine::new(re, simulation);
-
-    engine.async_run().await;
-
-    // render::run(&mut re, &mut world).await;
+    let mut screen = render::RenderBuffer::new(&simulation.world.image, 60);
 
     // API GOAL:
     // display::show(
@@ -56,4 +52,30 @@ async fn main() {
     // OR
     // let engine = Engine{ display: , audio: , simulation: }
     // engine.run().await;
+
+    let mut last_update = Instant::now();
+
+    // TODO : generic throttled loop here
+    loop {
+        let available_sim_duration = screen
+            .target_frame_time()
+            .saturating_sub(screen.last_frame_time());
+
+        //Note : Discrete simulation can be called multiple time without rendering (speed purposes)
+        // However a Continuous simulation (working on floats) leverage the elapsed time to algebraically compute next Update.
+        // CAREFUL : Simulation could also be called multiple times, just to finish one full Update...
+
+        // attempt (TODO) multiple total Update on (possibly linear) simulation
+        simulation.update(last_update.elapsed(), available_sim_duration);
+
+        last_update = Instant::now();
+
+        //TODO : put this in UI (useful only if different from FPS...)
+        let ups = simulation.get_updates_per_second();
+        if ups.is_some() {
+            println!("UPS: {}", ups.unwrap());
+        }
+
+        screen.update(simulation.render()).await;
+    }
 }
