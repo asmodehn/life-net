@@ -1,9 +1,9 @@
+use crate::graphics::view::Viewable;
 use macroquad::texture::Image;
 use std::time::{Duration, Instant};
 
 use crate::life::quad::Quad;
 use crate::perf::DurationAverage;
-use crate::render::Renderable;
 
 //TODO : make it just a trait somehow ??
 struct ContinuousTime {
@@ -11,7 +11,7 @@ struct ContinuousTime {
     average_duration: DurationAverage,
 }
 
-impl Renderable for ContinuousTime {
+impl Viewable for ContinuousTime {
     fn render(&mut self) -> &Image {
         // self.world.render()
         // no need to render with a quad

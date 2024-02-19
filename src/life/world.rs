@@ -1,5 +1,5 @@
+use crate::graphics::view::Viewable;
 use crate::life::cell;
-use crate::render::Renderable;
 use macroquad::color::{BLACK, WHITE};
 use macroquad::prelude::Image;
 use std::time::Duration;
@@ -72,7 +72,7 @@ impl World {
     }
 }
 
-impl Renderable for World {
+impl Viewable for World {
     //TODO : review lifetime once structure is decided
     fn render(&mut self) -> &Image {
         for i in 0..self.buffer.len() {

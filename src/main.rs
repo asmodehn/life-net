@@ -4,13 +4,13 @@ extern crate core;
 extern crate test;
 
 mod compute;
+mod graphics;
 mod life;
 mod perf;
-mod render;
 
 use crate::compute::Compute;
-use crate::render::Renderable;
 use macroquad::prelude::*;
+use macroquad::ui;
 use std::time::Instant;
 
 fn window_conf() -> Conf {
@@ -40,7 +40,7 @@ async fn main() {
     let mut simulation =
         compute::discrete::DiscreteTime::new(life::quad::Quad::new(w, h)).with_max_update_rate(5.);
 
-    let mut screen = render::RenderBuffer::new(&simulation.world.image, 60);
+    let mut screen = graphics::view::View::new(&simulation.world.image, 60);
 
     // API GOAL:
     // display::show(
@@ -73,9 +73,9 @@ async fn main() {
         //TODO : put this in UI (useful only if different from FPS...)
         let ups = simulation.get_updates_per_second();
         if ups.is_some() {
-            println!("UPS: {}", ups.unwrap());
+            ui::root_ui().label(None, &format!("UPS: {}", ups.unwrap()));
         }
 
-        screen.update(simulation.render()).await;
+        screen.update(&mut simulation).await;
     }
 }

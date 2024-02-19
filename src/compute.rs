@@ -1,10 +1,10 @@
-use crate::render::Renderable;
+use crate::graphics::view::Viewable;
 use std::time::{Duration, Instant};
 
 mod continuous;
 pub(crate) mod discrete;
 
-pub(crate) trait Compute: Renderable {
+pub(crate) trait Compute: Viewable {
     // Not in trait -> cannot be made into an object..
     // fn with_max_update_rate(self: Self, per_second: i32) -> Self;
 

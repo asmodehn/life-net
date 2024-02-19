@@ -1,8 +1,7 @@
 use crate::compute::Compute;
+use crate::graphics::view::Viewable;
 use crate::life::quad::Quad;
 use crate::perf::DurationAverage;
-use crate::render::Renderable;
-use itertools::max;
 use macroquad::texture::Image;
 use std::cmp::min;
 use std::time::{Duration, Instant};
@@ -32,7 +31,7 @@ impl DiscreteTime {
     }
 }
 
-impl Renderable for DiscreteTime {
+impl Viewable for DiscreteTime {
     fn render(&mut self) -> &Image {
         // self.world.render()
         // no need to render with a quad

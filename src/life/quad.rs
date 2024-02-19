@@ -122,34 +122,6 @@ impl Quad {
         }
     }
 
-    //TODO : REMOVE => let caller handle the loop with update_until ??
-    // pub(crate) fn compute_until(&mut self, mut until: impl FnMut(&Self) -> bool) {
-    //     loop {
-    //         //check for completion
-    //         if self.is_updated() {
-    //             (self.updated_cb)(self);
-    //         }
-    //
-    //         //(re)initialize if needed
-    //         if self.update.is_none() {
-    //             //start new update when necessary
-    //             self.update = Some(ImageUpdate::new(&self.image));
-    //         }
-    //
-    //         //attempt an update step
-    //         match self.update.unwrap().step() {
-    //             None => {  },
-    //             Some((x, y, cell_color)) => {self.image.set_pixel(x as u32, y as u32, cell_color);}
-    //         }
-    //
-    //         //late until to ensure some progress
-    //         //can mutate itself !
-    //         if until(self) {
-    //             break
-    //         }
-    //     }
-    // }
-
     // TODO : rename -> update_until !
     pub(crate) fn compute_once_or_until(&mut self, mut until: impl FnMut(&Self) -> bool) {
         loop {
@@ -158,7 +130,7 @@ impl Quad {
                 (self.updated_cb)(self);
                 break;
             }
-
+            //TODO : test: isn't this duplication ??
             //(re)initialize if needed
             if self.update.is_none() {
                 //start new update when necessary
