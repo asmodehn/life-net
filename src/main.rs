@@ -42,6 +42,8 @@ async fn main() {
 
     let mut screen = graphics::view::View::new(&simulation.world.image, 60);
 
+    // TODO : scene, for all relative positioning...
+
     // API GOAL:
     // display::show(
     //      simulation::run(world, limiter /* some kind of customisable CPU limiter*/),
