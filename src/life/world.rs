@@ -1,5 +1,7 @@
+use crate::compute::discrete::DiscreteTime;
 use crate::graphics::view::Viewable;
 use crate::life::cell;
+use crate::life::quad::Quad;
 use macroquad::color::{BLACK, WHITE};
 use macroquad::prelude::Image;
 use std::time::Duration;
@@ -72,19 +74,20 @@ impl World {
     }
 }
 
-impl Viewable for World {
-    //TODO : review lifetime once structure is decided
-    fn render(&mut self) -> &Image {
-        for i in 0..self.buffer.len() {
-            self.image.set_pixel(
-                (u16_from_usize(i) % self.image.width) as u32,
-                (u16_from_usize(i) / self.image.width) as u32,
-                match self.buffer[i] {
-                    cell::State::Alive => BLACK,
-                    cell::State::Dead => WHITE,
-                },
-            );
-        }
-        &self.image
-    }
-}
+// impl Viewable for World {
+//     //TODO : review lifetime once structure is decided
+//     fn render(&mut self) -> &impl Drawable {
+//         for i in 0..self.buffer.len() {
+//             self.image.set_pixel(
+//                 (u16_from_usize(i) % self.image.width) as u32,
+//                 (u16_from_usize(i) / self.image.width) as u32,
+//                 match self.buffer[i] {
+//                     cell::State::Alive => BLACK,
+//                     cell::State::Dead => WHITE,
+//                 },
+//             );
+//         }
+//         //TODO : review this to avoid creation everytime...
+//         &Sprite::from_image(&self.image)
+//     }
+// }

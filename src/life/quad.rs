@@ -1,3 +1,4 @@
+use crate::graphics::view::Viewable;
 use crate::life::cell;
 use crate::life::cell::{ALIVE, DEAD};
 use crate::perf::DurationAverage;
@@ -58,6 +59,7 @@ impl ImageUpdate {
 }
 
 pub struct Quad {
+    // TODO : rename to avoid name clashes...
     pub image: Image,
     update: Option<ImageUpdate>,
     updated_cb: fn(&mut Self),
@@ -151,6 +153,19 @@ impl Quad {
                 break;
             }
         }
+    }
+}
+
+impl Viewable for Quad {
+    // fn render(&mut self) -> Box<dyn Drawable> {
+    //     //Always assume here that the image has changed (ie. simulation did its job)
+    //     // => make the drawable update extra light ! TODO
+    //     self.drawable.as_mut().update(&self.world.image);
+    //     self.drawable
+    // }
+
+    fn rendered(&self) -> &Image {
+        &self.image
     }
 }
 

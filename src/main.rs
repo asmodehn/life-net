@@ -9,8 +9,12 @@ mod life;
 mod perf;
 
 use crate::compute::Compute;
+use crate::graphics::scene::Scene;
+use crate::graphics::sprite::Sprite;
+use crate::graphics::view::Viewable;
 use macroquad::prelude::*;
 use macroquad::ui;
+use std::rc::Rc;
 use std::time::Instant;
 
 fn window_conf() -> Conf {
@@ -26,23 +30,33 @@ fn window_conf() -> Conf {
 
 #[macroquad::main(window_conf)]
 async fn main() {
+    let width = screen_width().floor() as u32;
+    let height = screen_height().floor() as u32;
+
     //convert f32 screen size to something safe for render on image (u16 size)
     //TMP : convert to u16 (until world implement multiquads... TODO)
-    let w: u16 = u16::try_from(screen_width().floor() as u32).unwrap_or_else(|_v| u16::MAX);
-    let h: u16 = u16::try_from(screen_height().floor() as u32).unwrap_or_else(|_v| u16::MAX);
+    let w: u16 = u16::try_from(width).unwrap_or_else(|_v| u16::MAX);
+    let h: u16 = u16::try_from(height).unwrap_or_else(|_v| u16::MAX);
 
     println!("{} {}", w, h);
 
     //We want a functional architecture
     // => the inner structure of the nested loops' states should probably be reflected here somehow ?
 
+    let life_world = Rc::new(Box::new(life::quad::Quad::new(w, h)));
+
+    let screen = graphics::view::View::new()
+        .with_dimensions(width, height)
+        .with_framerate(60);
+
+    let scene: Scene<life::quad::Quad> = Scene::new(RED)
+        .with_drawable(Box::new(Sprite::from_viewable(Rc::downgrade(&life_world))))
+        .with_view(screen); // use World (simulation) as a parameter for Scene(graphics)
+
+    ///Simulation will take ownership of World
+    /// TODO : redesign around that... (extract useful parts of the sim runner and use elsewhere...
     // let mut simulation = Simulation::new(life::world::World::new(w, h), 32);
-    let mut simulation =
-        compute::discrete::DiscreteTime::new(life::quad::Quad::new(w, h)).with_max_update_rate(5.);
-
-    let mut screen = graphics::view::View::new(&simulation.world.image, 60);
-
-    // TODO : scene, for all relative positioning...
+    let mut simulation = compute::discrete::DiscreteTime::new(life_world).with_max_update_rate(5.);
 
     // API GOAL:
     // display::show(
@@ -70,6 +84,10 @@ async fn main() {
         // attempt (TODO) multiple total Update on (possibly linear) simulation
         simulation.update(last_update.elapsed(), available_sim_duration);
 
+        // simulation render on screen...
+        // simulation.render(screen);
+        //TODO : make this implicit somehow...
+
         last_update = Instant::now();
 
         //TODO : put this in UI (useful only if different from FPS...)
@@ -78,6 +96,9 @@ async fn main() {
             ui::root_ui().label(None, &format!("UPS: {}", ups.unwrap()));
         }
 
-        screen.update(&mut simulation).await;
+        //TODO: which one is best ??
+        scene.display().await;
+        // screen.update().await;
+        // graphics::show(view).await;
     }
 }

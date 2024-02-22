@@ -1,16 +1,41 @@
+use crate::graphics::scene::Scene;
+use crate::graphics::sprite::Sprite;
+use crate::graphics::view::View;
 use macroquad::color::{RED, YELLOW};
+use macroquad::math::IVec2;
+use macroquad::miniquad::CursorIcon::Default;
 use macroquad::prelude::{
-    clear_background, draw_texture, get_fps, get_frame_time, next_frame, Image, Texture2D,
+    clear_background, draw_texture, get_fps, get_frame_time, next_frame, screen_height,
+    screen_width, Image, Texture2D,
 };
 use macroquad::ui;
 use std::time::Duration;
 
 // mod ui;
-// mod scene;
-mod quad;
-mod sprite;
+pub(crate) mod quad;
+pub(crate) mod scene;
+pub(crate) mod sprite;
 pub(crate) mod view;
-// mod sprite;
+
+//Maybe default scene is a baad idea...
+// const DEFAULT_SCENE: Scene = Default::default();
+//
+// async fn display() {
+//     if !DEFAULT_SCENE.has_view() {
+//
+//         let width = screen_width().floor() as u32;
+//         let height = screen_height().floor() as u32;
+//
+//         let v = View::new(&DEFAULT_SCENE, IVec2::new(0,0))
+//             .with_dimensions(width, height);
+//         DEFAULT_SCENE.add_view(v);
+//     }
+//
+//
+//
+//     DEFAULT_SCENE.display().await
+// }
+
 //
 // use std::cell::Cell;
 // use macroquad::color::{Color, RED, YELLOW};

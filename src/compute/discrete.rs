@@ -1,26 +1,35 @@
 use crate::compute::Compute;
+use crate::graphics::quad::Drawable;
+use crate::graphics::sprite::Sprite;
 use crate::graphics::view::Viewable;
 use crate::life::quad::Quad;
 use crate::perf::DurationAverage;
 use macroquad::texture::Image;
+use std::cell::{Cell, Ref, RefCell, RefMut};
 use std::cmp::min;
+use std::ops::{Deref, DerefMut};
+use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 //TODO : make it just a trait somehow ??
 pub(crate) struct DiscreteTime {
-    pub world: Quad,
+    pub world: Rc<Box<Quad>>,
     pub max_update_rate: Option<f32>,
     average_duration: DurationAverage,
     full_update_timer: Option<Instant>,
+    // drawable: Box<dyn Drawable>,
+    // rendered: RefCell<Image>,
 }
 
 impl DiscreteTime {
-    pub fn new(quad: Quad) -> DiscreteTime {
+    pub fn new(quad: Rc<Box<Quad>>) -> DiscreteTime {
         DiscreteTime {
             world: quad,
             max_update_rate: None,
             average_duration: DurationAverage::default(),
             full_update_timer: None,
+            // drawable: Box::new(Sprite::from_image(&quad.image)),
+            // rendered: RefCell::new(&quad.image ),
         }
     }
     pub(crate) fn with_max_update_rate(self: Self, per_second: f32) -> Self {
@@ -28,14 +37,6 @@ impl DiscreteTime {
             max_update_rate: Some(per_second),
             ..self
         }
-    }
-}
-
-impl Viewable for DiscreteTime {
-    fn render(&mut self) -> &Image {
-        // self.world.render()
-        // no need to render with a quad
-        &self.world.image
     }
 }
 
@@ -65,7 +66,10 @@ impl Compute for DiscreteTime {
         //one update maximum :
         // - if faster than required, lets rely on caller to call us again
         // - if slower than needed, let's get out early.
-        self.world.compute_once_or_until(until_closure);
+        Rc::get_mut(&mut self.world).and_then(|w| {
+            w.compute_once_or_until(until_closure);
+            Some(w)
+        });
 
         //if update was finished, increment timer
         if self.world.is_updated() {
