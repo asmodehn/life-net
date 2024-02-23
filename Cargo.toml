@@ -10,3 +10,4 @@ macroquad = "0.4"
 rand = "0.8.5"
 itertools = { version = "0.12.1", features = [] }
 unique_id = "0.1.5"
+delegate = "0.12.0"

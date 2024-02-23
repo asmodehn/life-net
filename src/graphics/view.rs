@@ -1,4 +1,4 @@
-use crate::graphics::sprite::{Drawable, Sprite};
+use crate::graphics::sprite::Sprite;
 use macroquad::color::{RED, YELLOW};
 use macroquad::math::IVec2;
 use macroquad::prelude::{
@@ -6,6 +6,8 @@ use macroquad::prelude::{
 };
 use macroquad::ui;
 use std::time::Duration;
+
+use crate::graphics::quad::Drawable;
 
 pub trait Viewable {
     fn render(&mut self) -> &Image;

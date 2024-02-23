@@ -1,15 +1,10 @@
+use crate::graphics::quad::{Drawable, Placed, Quad};
 use macroquad::color::YELLOW;
 use macroquad::math::IVec2;
-// use macroquad::color::Color;
-// use macroquad::math::IVec2;
 use macroquad::prelude::{draw_rectangle, draw_texture, Color, Image, Texture2D, UVec2};
-// use crate::graphics::Displayable;
-// use crate::graphics::quad::Quad;
-//
+use std::ops::AddAssign;
 
-pub(crate) trait Drawable {
-    fn draw(&self, position: IVec2);
-}
+use delegate::delegate;
 
 #[derive(Default)]
 pub(crate) struct Sprite {
@@ -45,15 +40,6 @@ impl Sprite {
             ..Self::default()
         }
     }
-
-    pub(crate) fn update(&mut self, image: &Image) {
-        if self.texture.is_none() {
-            //we do not modify dimensions : intended.
-            self.texture = Some(Texture2D::from_image(&image));
-        } else {
-            self.texture.as_mut().unwrap().update(image);
-        }
-    }
 }
 
 impl Drawable for Sprite {
@@ -75,4 +61,88 @@ impl Drawable for Sprite {
             );
         }
     }
+
+    fn update(&mut self, image: &Image) {
+        if self.texture.is_none() {
+            //we do not modify dimensions : intended.
+            self.texture = Some(Texture2D::from_image(&image));
+        } else {
+            self.texture.as_mut().unwrap().update(image);
+        }
+    }
+}
+
+impl Quad for Sprite {
+    fn get_dimensions(&self) -> UVec2 {
+        self.dimensions
+    }
+
+    fn get_background(&self) -> Color {
+        self.color
+    }
+
+    fn set_dimensions(&mut self, dimensions: UVec2) {
+        self.dimensions = dimensions
+    }
+
+    fn set_background(&mut self, color: Color) {
+        self.color = color
+    }
+
+    fn scale(&mut self, factor: u32) {
+        self.dimensions.x *= factor;
+        self.dimensions.y *= factor;
+    }
+}
+
+pub(crate) struct PlacedSprite {
+    position: IVec2,
+    sprite: Sprite,
+}
+
+const DEFAULT_POSITION: IVec2 = IVec2::new(0, 0);
+
+impl PlacedSprite {
+    pub fn new(sprite: Sprite) -> Self {
+        Self {
+            sprite,
+            position: DEFAULT_POSITION,
+        }
+    }
+}
+
+impl Quad for PlacedSprite {
+    delegate! {
+        to self.sprite {
+            fn get_dimensions(&self) -> UVec2;
+            fn get_background(&self) -> Color;
+            fn set_dimensions(&mut self, dimensions: UVec2);
+            fn set_background(&mut self, color: Color);
+            fn scale(&mut self, factor: u32);
+        }
+    }
+}
+
+impl Placed for PlacedSprite {
+    fn get_position(&self) -> IVec2 {
+        self.position
+    }
+
+    fn set_position(&mut self, position: IVec2) {
+        self.position = position;
+    }
+
+    fn translate(&mut self, to: IVec2) {
+        self.position.add_assign(to);
+    }
+}
+
+impl Drawable for PlacedSprite {
+    delegate! {
+            to self.sprite {
+
+        fn draw(&self, position_in_screen: IVec2);
+    fn update(&mut self, image: &Image);
+            }
+        }
 }

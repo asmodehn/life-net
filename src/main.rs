@@ -26,10 +26,13 @@ fn window_conf() -> Conf {
 
 #[macroquad::main(window_conf)]
 async fn main() {
+    let width = screen_width().floor() as u32;
+    let height = screen_height().floor() as u32;
+
     //convert f32 screen size to something safe for render on image (u16 size)
     //TMP : convert to u16 (until world implement multiquads... TODO)
-    let w: u16 = u16::try_from(screen_width().floor() as u32).unwrap_or_else(|_v| u16::MAX);
-    let h: u16 = u16::try_from(screen_height().floor() as u32).unwrap_or_else(|_v| u16::MAX);
+    let w: u16 = u16::try_from(width).unwrap_or_else(|_v| u16::MAX);
+    let h: u16 = u16::try_from(height).unwrap_or_else(|_v| u16::MAX);
 
     println!("{} {}", w, h);
 
@@ -40,7 +43,11 @@ async fn main() {
     let mut simulation =
         compute::discrete::DiscreteTime::new(life::quad::Quad::new(w, h)).with_max_update_rate(5.);
 
+    //TODO : use sprite here somehwere, instead of in view ??
+
     let mut screen = graphics::view::View::new(&simulation.world.image, 60);
+
+    // TODO : View ==> Scene
 
     // TODO : scene, for all relative positioning...
 
