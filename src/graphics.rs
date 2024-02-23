@@ -1,41 +1,21 @@
+use crate::graphics::quad::Drawable;
+use crate::graphics::view::Viewable;
 use macroquad::color::{RED, YELLOW};
+use macroquad::math::IVec2;
 use macroquad::prelude::{
-    clear_background, draw_texture, get_fps, get_frame_time, next_frame, Image, Texture2D,
+    clear_background, draw_texture, get_fps, get_frame_time, next_frame, Color, Image, Texture2D,
 };
 use macroquad::ui;
 use std::time::Duration;
 
 // mod ui;
 // mod scene;
-mod quad;
-mod sprite;
+pub(crate) mod quad;
+pub(crate) mod sprite;
 pub(crate) mod view;
-// mod sprite;
-//
-// use std::cell::Cell;
-// use macroquad::color::{Color, RED, YELLOW};
-// use macroquad::math::IVec2;
-// use macroquad::prelude::{clear_background, draw_texture, Image, next_frame};
-// use macroquad::ui::Ui;
-//
-// use crate::graphics::scene::Scene;
-//
-// pub trait Renderable {
-//     fn render(&mut self) -> &Image;
-// }
-//
-//
-// pub trait Displayable {
-//
-//     /// display some graphical element
-//     /// Screen is passed to everyone has the screen configuration available
-//     fn display(&self, view: &View);
-//
-// }
-//
-//
-//
-// //TODO : implement this with some kind of structure...
+
+const DEFAULT_BACKGROUND: Color = RED;
+
 //
 
 // pub(crate) async fn display(view: &View) {
@@ -58,3 +38,37 @@ pub(crate) mod view;
 //
 //     next_frame().await;
 // }
+
+pub fn last_frame_time() -> Duration {
+    Duration::from_secs_f32(get_frame_time())
+}
+
+#[allow(dead_code)]
+pub fn current_fps() -> i32 {
+    get_fps()
+    //TODO : average these over time... in update ? only when used ?
+}
+
+pub(crate) fn target_frame_time(target_fps: f32) -> Duration {
+    Duration::from_secs_f32(1. / target_fps)
+}
+
+pub(crate) fn update(d: &mut impl Drawable, v: &impl Viewable) {
+    d.update(v.render());
+}
+
+pub(crate) async fn render(d: &impl Drawable, pos: IVec2) {
+    //
+    // pub(crate) async fn update(&mut self, viewable: &mut impl Drawable) {
+    clear_background(DEFAULT_BACKGROUND);
+
+    d.draw(pos);
+
+    //TODO : on screen / window instead of log...
+    // println!("FPS: {}", self.current_fps());
+
+    //CAREFUL with z order !
+    ui::root_ui().label(None, format!("FPS: {}", current_fps()).as_str());
+
+    next_frame().await;
+}

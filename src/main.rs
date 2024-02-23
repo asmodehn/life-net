@@ -9,6 +9,7 @@ mod life;
 mod perf;
 
 use crate::compute::Compute;
+use crate::graphics::view::Viewable;
 use macroquad::prelude::*;
 use macroquad::ui;
 use std::time::Instant;
@@ -43,9 +44,10 @@ async fn main() {
     let mut simulation =
         compute::discrete::DiscreteTime::new(life::quad::Quad::new(w, h)).with_max_update_rate(5.);
 
-    //TODO : use sprite here somehwere, instead of in view ??
+    let mut sprite = graphics::sprite::Sprite::from_image(simulation.render());
 
-    let mut screen = graphics::view::View::new(&simulation.world.image, 60);
+    //NOT USe anymore
+    // let mut screen = graphics::view::View::new(&simulation.world.image, 60);
 
     // TODO : View ==> Scene
 
@@ -66,9 +68,8 @@ async fn main() {
 
     // TODO : generic throttled loop here
     loop {
-        let available_sim_duration = screen
-            .target_frame_time()
-            .saturating_sub(screen.last_frame_time());
+        let available_sim_duration =
+            graphics::target_frame_time(60.0).saturating_sub(graphics::last_frame_time());
 
         //Note : Discrete simulation can be called multiple time without rendering (speed purposes)
         // However a Continuous simulation (working on floats) leverage the elapsed time to algebraically compute next Update.
@@ -85,6 +86,10 @@ async fn main() {
             ui::root_ui().label(None, &format!("UPS: {}", ups.unwrap()));
         }
 
-        screen.update(&mut simulation).await;
+        // screen.update(&mut simulation).await;
+
+        graphics::update(&mut sprite, &simulation);
+
+        graphics::render(&sprite, IVec2::new(0, 0)).await;
     }
 }

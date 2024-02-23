@@ -12,7 +12,7 @@ struct ContinuousTime {
 }
 
 impl Viewable for ContinuousTime {
-    fn render(&mut self) -> &Image {
+    fn render(&self) -> &Image {
         // self.world.render()
         // no need to render with a quad
         &self.world.image

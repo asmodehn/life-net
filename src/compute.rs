@@ -1,6 +1,7 @@
 use crate::graphics::view::Viewable;
 use std::time::{Duration, Instant};
 
+mod actor;
 mod continuous;
 pub(crate) mod discrete;
 

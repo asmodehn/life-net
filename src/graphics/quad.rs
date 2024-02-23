@@ -24,6 +24,7 @@ pub(crate) trait Quad {
 }
 
 pub trait Placed {
+    // TODO : instead of "plceD" adjective. think about "Place" as noun. and add an option to all element that may have a place...
     fn get_position(&self) -> IVec2;
 
     fn set_position(&mut self, position: IVec2);

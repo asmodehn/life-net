@@ -10,7 +10,7 @@ use std::time::Duration;
 use crate::graphics::quad::Drawable;
 
 pub trait Viewable {
-    fn render(&mut self) -> &Image;
+    fn render(&self) -> &Image;
 }
 
 pub struct View {
