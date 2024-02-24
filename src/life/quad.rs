@@ -1,6 +1,5 @@
 use crate::life::cell;
 use crate::life::cell::{ALIVE, DEAD};
-use crate::perf::DurationAverage;
 use itertools::iproduct;
 use macroquad::color::Color;
 use macroquad::prelude::Image;

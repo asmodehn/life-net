@@ -2,7 +2,7 @@ use crate::actor;
 use crate::compute::Compute;
 use crate::graphics::view::Viewable;
 use crate::life::quad::Quad;
-use crate::perf::DurationAverage;
+use crate::perf::{RunningAverage, Timer};
 use macroquad::texture::Image;
 use std::cmp::min;
 use std::time::{Duration, Instant};
@@ -11,8 +11,8 @@ use std::time::{Duration, Instant};
 pub(crate) struct DiscreteTime {
     pub world: Quad,
     pub max_update_rate: Option<f32>,
-    average_duration: DurationAverage,
-    full_update_timer: Option<Instant>,
+    average_duration: RunningAverage<Duration>,
+    full_update_timer: Timer,
 }
 
 impl DiscreteTime {
@@ -20,8 +20,8 @@ impl DiscreteTime {
         DiscreteTime {
             world: quad,
             max_update_rate: None,
-            average_duration: DurationAverage::default(),
-            full_update_timer: None,
+            average_duration: RunningAverage::<Duration>::default(),
+            full_update_timer: Timer::default(),
         }
     }
     pub(crate) fn with_max_update_rate(self: Self, per_second: f32) -> Self {
@@ -42,15 +42,14 @@ impl Viewable for DiscreteTime {
 
 impl Compute for DiscreteTime {
     fn update_timer_tick(&mut self) {
-        if self.full_update_timer.is_some() {
-            self.average_duration
-                .record(self.full_update_timer.unwrap().elapsed())
-        }
-        self.full_update_timer = Some(Instant::now());
+        self.average_duration
+            .record(self.full_update_timer.elapsed_and_reset())
     }
 
     fn get_updates_per_second(&self) -> Option<f32> {
-        self.average_duration.per_second()
+        self.average_duration
+            .average()
+            .and_then(|d| Some(1. / d.as_secs_f32()))
     }
 
     fn get_max_update_duration(&self) -> Option<Duration> {

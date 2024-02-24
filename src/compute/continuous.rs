@@ -3,12 +3,12 @@ use macroquad::texture::Image;
 use std::time::{Duration, Instant};
 
 use crate::life::quad::Quad;
-use crate::perf::DurationAverage;
+use crate::perf::RunningAverage;
 
 //TODO : make it just a trait somehow ??
 struct ContinuousTime {
     pub world: Quad, // TODO : replace with world (always continuous maybe ??)
-    average_duration: DurationAverage,
+    average_duration: RunningAverage<Duration>,
 }
 
 impl Viewable for ContinuousTime {
