@@ -19,8 +19,10 @@ pub(crate) trait Compute: Viewable {
 
 #[cfg(test)]
 mod tests {
+    use crate::actor::Computable;
     use crate::compute;
     use crate::compute::Compute;
+
     use crate::life::cell;
     use crate::life::quad::Quad;
     use std::time::Duration;
@@ -33,7 +35,7 @@ mod tests {
         let mut s = compute::discrete::DiscreteTime::new(q).with_max_update_rate(1.);
 
         //one update
-        s.update(Duration::new(0, 0), Duration::MAX);
+        s.update(Duration::new(0, 0), None);
 
         assert_eq!(s.world.image.get_pixel(0, 0), cell::DEAD)
     }
@@ -47,7 +49,7 @@ mod tests {
         let mut s = compute::discrete::DiscreteTime::new(q).with_max_update_rate(1.);
 
         //one update
-        s.update(Duration::new(0, 0), Duration::MAX);
+        s.update(Duration::new(0, 0), None);
 
         assert_eq!(s.world.image.get_pixel(0, 0), cell::ALIVE);
         assert_eq!(s.world.image.get_pixel(0, 1), cell::ALIVE);

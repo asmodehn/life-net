@@ -1,9 +1,38 @@
+use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
 use std::time::{Duration, Instant};
 
+//encapsulating often used,hidden, mutating value...
+#[derive(Debug, PartialEq)]
+pub(crate) struct Timer {
+    since: Cell<Instant>,
+}
+
+impl Default for Timer {
+    fn default() -> Self {
+        Self {
+            since: Cell::new(Instant::now()),
+        }
+    }
+}
+
+impl Timer {
+    pub fn elapsed_and_reset(&self) -> Duration {
+        let elapsed = self.elapsed();
+        self.since.replace(Instant::now());
+        elapsed
+    }
+
+    pub fn elapsed(&self) -> Duration {
+        self.since.get().elapsed()
+    }
+}
+
+//TODO : RunningAverage<T>
+
 #[derive(Debug, PartialEq, Default)]
 pub(crate) struct DurationAverage {
-    timed_since: Option<Instant>, //TODO: or passed in constructor/reset method ??
+    timed_since: Option<Timer>,
     durations: VecDeque<Duration>,
     window_size: u16, // to never overflow usize (on any platform)
 }
@@ -25,13 +54,15 @@ impl DurationAverage {
         }
     }
 
+    //TODO : review the start/ stop API ...
     pub fn timed_start(&mut self) {
-        self.timed_since = Some(Instant::now());
+        self.timed_since = Some(Timer::default());
     }
 
     pub fn timed_stop(&mut self) {
-        self.durations
-            .push_back(self.timed_since.unwrap().elapsed());
+        let elapsed = self.timed_elapsed();
+
+        self.durations.push_back(elapsed);
         if self.durations.len() > self.window_size as usize {
             self.durations.pop_front();
         }
@@ -67,8 +98,8 @@ impl DurationAverage {
 
     //TODO : maybe we just want to expose the internal instant instead somehow ?
     pub fn timed_elapsed(&self) -> Duration {
-        let instant = self.timed_since.unwrap();
-        instant.elapsed()
+        let tmr = self.timed_since.as_ref().expect("timer must be started !");
+        tmr.elapsed()
     }
 }
 
