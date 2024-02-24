@@ -6,7 +6,9 @@ use macroquad::prelude::{draw_texture, Color, IVec2, IVec3, Image, UVec2};
 
 pub(crate) trait Drawable {
     fn draw(&self, position_in_screen: IVec2);
+}
 
+pub(crate) trait Updatable {
     fn update(&mut self, image: &Image);
 }
 

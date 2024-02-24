@@ -3,12 +3,16 @@
 extern crate core;
 extern crate test;
 
+mod actor;
 mod compute;
 mod graphics;
 mod life;
 mod perf;
 
+use crate::actor::{Actor, Computable};
+use crate::compute::discrete::DiscreteTime;
 use crate::compute::Compute;
+use crate::graphics::sprite::Sprite;
 use crate::graphics::view::Viewable;
 use macroquad::prelude::*;
 use macroquad::ui;
@@ -44,7 +48,10 @@ async fn main() {
     let mut simulation =
         compute::discrete::DiscreteTime::new(life::quad::Quad::new(w, h)).with_max_update_rate(5.);
 
-    let mut sprite = graphics::sprite::Sprite::from_image(simulation.render());
+    let sprite = graphics::sprite::Sprite::from_image(simulation.render());
+
+    //TMP : whole world in one actor. => TODO : multiple actors in a world...
+    let mut lifeworld: Actor<DiscreteTime, Sprite> = Actor::new(simulation, sprite);
 
     //NOT USe anymore
     // let mut screen = graphics::view::View::new(&simulation.world.image, 60);
@@ -76,20 +83,20 @@ async fn main() {
         // CAREFUL : Simulation could also be called multiple times, just to finish one full Update...
 
         // attempt (TODO) multiple total Update on (possibly linear) simulation
-        simulation.update(last_update.elapsed(), available_sim_duration);
+        lifeworld.update(last_update.elapsed(), Some(available_sim_duration));
 
         last_update = Instant::now();
 
         //TODO : put this in UI (useful only if different from FPS...)
-        let ups = simulation.get_updates_per_second();
-        if ups.is_some() {
-            ui::root_ui().label(None, &format!("UPS: {}", ups.unwrap()));
-        }
+        // let ups = simulation.get_updates_per_second();
+        // if ups.is_some() {
+        //     ui::root_ui().label(None, &format!("UPS: {}", ups.unwrap()));
+        // }
 
         // screen.update(&mut simulation).await;
 
-        graphics::update(&mut sprite, &simulation);
+        graphics::update(&mut lifeworld.graphics, &lifeworld.compute);
 
-        graphics::render(&sprite, IVec2::new(0, 0)).await;
+        graphics::render(&lifeworld.graphics, IVec2::new(0, 0)).await;
     }
 }

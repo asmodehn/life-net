@@ -1,4 +1,4 @@
-use crate::graphics::quad::{Drawable, Placed, Quad};
+use crate::graphics::quad::{Drawable, Placed, Quad, Updatable};
 use macroquad::color::YELLOW;
 use macroquad::math::IVec2;
 use macroquad::prelude::{draw_rectangle, draw_texture, Color, Image, Texture2D, UVec2};
@@ -12,6 +12,7 @@ pub(crate) struct Sprite {
     dimensions: UVec2,
     texture: Option<Texture2D>,
 }
+//TODO : a Vec of drawables instead ??
 
 const DEFAULT_COLOR: Color = YELLOW;
 const DEFAULT_DIMENSIONS: UVec2 = UVec2::new(16, 16);
@@ -61,7 +62,9 @@ impl Drawable for Sprite {
             );
         }
     }
+}
 
+impl Updatable for Sprite {
     fn update(&mut self, image: &Image) {
         if self.texture.is_none() {
             //we do not modify dimensions : intended.
@@ -139,10 +142,18 @@ impl Placed for PlacedSprite {
 
 impl Drawable for PlacedSprite {
     delegate! {
-            to self.sprite {
+        to self.sprite {
 
-        fn draw(&self, position_in_screen: IVec2);
-    fn update(&mut self, image: &Image);
-            }
+    fn draw(&self, position_in_screen: IVec2);
         }
+    }
+}
+
+impl Updatable for PlacedSprite {
+    delegate! {
+        to self.sprite {
+
+    fn update(&mut self, image: &Image);
+        }
+    }
 }

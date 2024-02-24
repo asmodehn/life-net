@@ -7,7 +7,7 @@ use macroquad::prelude::{
 use macroquad::ui;
 use std::time::Duration;
 
-use crate::graphics::quad::Drawable;
+use crate::graphics::quad::{Drawable, Updatable};
 
 pub trait Viewable {
     fn render(&self) -> &Image;

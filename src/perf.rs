@@ -1,41 +1,6 @@
 use std::collections::VecDeque;
 use std::time::{Duration, Instant};
 
-// #[allow(dead_code)]
-// pub(crate) struct PerfCounter {
-//     last_second: Instant,
-//     call_number_since_last_second: u32,
-//     last_cps: f32,
-// }
-//
-// impl PerfCounter {
-//     #[allow(dead_code)]
-//     pub fn new() -> PerfCounter {
-//         PerfCounter {
-//             last_second: Instant::now(),
-//             call_number_since_last_second: 0,
-//             last_cps: 0.,
-//         }
-//     }
-//
-//     #[allow(dead_code)]
-//     pub fn incr(self: &mut PerfCounter) {
-//         if self.last_second.elapsed() > Duration::new(1, 0) {
-//             self.last_cps = self.call_number_since_last_second as f32
-//                 / self.last_second.elapsed().as_secs_f32();
-//             self.last_second = Instant::now();
-//             self.call_number_since_last_second = 0;
-//         }
-//         self.call_number_since_last_second += 1;
-//     }
-//
-//     #[allow(dead_code)]
-//     //TODO : clean up this (derive debug/display ??)
-//     pub fn print(self: &PerfCounter) {
-//         println!("{}", self.last_cps)
-//     }
-// }
-
 #[derive(Debug, PartialEq, Default)]
 pub(crate) struct DurationAverage {
     timed_since: Option<Instant>, //TODO: or passed in constructor/reset method ??

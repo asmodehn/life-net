@@ -1,4 +1,4 @@
-use crate::graphics::quad::Drawable;
+use crate::graphics::quad::{Drawable, Updatable};
 use crate::graphics::view::Viewable;
 use macroquad::color::{RED, YELLOW};
 use macroquad::math::IVec2;
@@ -11,33 +11,12 @@ use std::time::Duration;
 // mod ui;
 // mod scene;
 pub(crate) mod quad;
+mod rect;
 pub(crate) mod sprite;
+mod texture;
 pub(crate) mod view;
 
 const DEFAULT_BACKGROUND: Color = RED;
-
-//
-
-// pub(crate) async fn display(view: &View) {
-//
-//     view.render(view.scene, view.position);
-//
-//
-//
-//     // clear_background(RED);
-//
-//     self.texture.update(image);
-//
-//     draw_texture(&self.texture, 0., 0., YELLOW);
-//
-//     //TODO : on screen / window instead of log...
-//     // println!("FPS: {}", self.current_fps());
-//
-//     //CAREFUL with z order !
-//     ui::root_ui().label(None, format!("FPS: {}", self.current_fps()).as_str());
-//
-//     next_frame().await;
-// }
 
 pub fn last_frame_time() -> Duration {
     Duration::from_secs_f32(get_frame_time())
@@ -53,7 +32,7 @@ pub(crate) fn target_frame_time(target_fps: f32) -> Duration {
     Duration::from_secs_f32(1. / target_fps)
 }
 
-pub(crate) fn update(d: &mut impl Drawable, v: &impl Viewable) {
+pub(crate) fn update(d: &mut impl Updatable, v: &impl Viewable) {
     d.update(v.render());
 }
 

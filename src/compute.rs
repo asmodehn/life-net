@@ -1,7 +1,6 @@
 use crate::graphics::view::Viewable;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
-mod actor;
 mod continuous;
 pub(crate) mod discrete;
 
@@ -11,12 +10,12 @@ pub(crate) trait Compute: Viewable {
 
     fn update_timer_tick(&mut self);
 
-    fn update(&mut self, elapsed: Duration, constraint: Duration);
-
     fn get_updates_per_second(&self) -> Option<f32>;
     fn get_max_update_duration(&self) -> Option<Duration>;
     fn is_ups_over_max(&self) -> bool;
 }
+
+//TODO : => to struct ...
 
 #[cfg(test)]
 mod tests {
