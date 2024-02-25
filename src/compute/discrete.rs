@@ -1,8 +1,9 @@
 use crate::actor;
+use crate::compute::rate_limiter::RateLimiter;
+use crate::compute::timer::Timer;
 use crate::compute::Compute;
 use crate::graphics::view::Viewable;
 use crate::life::quad::Quad;
-use crate::perf::{RunningAverage, Timer};
 use macroquad::texture::Image;
 use std::cmp::min;
 use std::time::{Duration, Instant};
@@ -10,8 +11,7 @@ use std::time::{Duration, Instant};
 //TODO : make it just a struct somehow ??
 pub(crate) struct DiscreteTime {
     pub world: Quad,
-    pub max_update_rate: Option<f32>,
-    average_duration: RunningAverage<Duration>,
+    limiter: RateLimiter,
     full_update_timer: Timer,
 }
 
@@ -19,16 +19,12 @@ impl DiscreteTime {
     pub fn new(quad: Quad) -> DiscreteTime {
         DiscreteTime {
             world: quad,
-            max_update_rate: None,
-            average_duration: RunningAverage::<Duration>::default(),
+            limiter: RateLimiter::default(),
             full_update_timer: Timer::default(),
         }
     }
-    pub(crate) fn with_max_update_rate(self: Self, per_second: f32) -> Self {
-        Self {
-            max_update_rate: Some(per_second),
-            ..self
-        }
+    pub(crate) fn with_limiter(self: Self, limiter: RateLimiter) -> Self {
+        Self { limiter, ..self }
     }
 }
 
@@ -42,25 +38,27 @@ impl Viewable for DiscreteTime {
 
 impl Compute for DiscreteTime {
     fn update_timer_tick(&mut self) {
-        self.average_duration
+        self.limiter
+            .average_duration
             .record(self.full_update_timer.elapsed_and_reset())
     }
 
     fn get_updates_per_second(&self) -> Option<f32> {
-        self.average_duration
+        self.limiter
+            .average_duration
             .average()
             .and_then(|d| Some(1. / d.as_secs_f32()))
     }
 
     fn get_max_update_duration(&self) -> Option<Duration> {
-        match self.max_update_rate {
+        match self.limiter.limit_rate() {
             None => None,
             Some(update_rate) => Some(Duration::from_secs_f32(1. / update_rate)),
         }
     }
 
     fn is_ups_over_max(&self) -> bool {
-        match (self.max_update_rate, self.get_updates_per_second()) {
+        match (self.limiter.limit_rate(), self.get_updates_per_second()) {
             (None, _) => false,
             (_, None) => false,
             (Some(max_ups), Some(ups)) => ups >= max_ups as f32,
@@ -69,11 +67,10 @@ impl Compute for DiscreteTime {
 }
 
 impl actor::Computable for DiscreteTime {
-    fn update(&mut self, elapsed: Duration, constraint: Option<Duration>) {
-        let update_constraint = match (constraint, self.get_max_update_duration()) {
-            (c, None) => c,
-            (None, mud) => mud,
-            (Some(d), Some(upd)) => Some(min(d, upd)),
+    fn compute(&mut self, elapsed: Duration, constraint: Option<Duration>) {
+        let update_constraint = match constraint {
+            None => self.limiter.max_duration,
+            Some(d) => self.limiter.with_constraint(d),
         };
 
         let until_closure = {

@@ -1,47 +1,19 @@
-use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
 use std::iter::Sum;
 use std::ops::Div;
-use std::time::{Duration, Instant};
-
-//encapsulating often used,hidden, mutating value...
-#[derive(Debug, PartialEq)]
-pub(crate) struct Timer {
-    since: Cell<Instant>,
-}
-
-impl Default for Timer {
-    fn default() -> Self {
-        Self {
-            since: Cell::new(Instant::now()),
-        }
-    }
-}
-
-impl Timer {
-    pub fn elapsed_and_reset(&self) -> Duration {
-        let elapsed = self.elapsed();
-        self.since.replace(Instant::now());
-        elapsed
-    }
-
-    pub fn elapsed(&self) -> Duration {
-        self.since.get().elapsed()
-    }
-}
 
 #[derive(Debug, PartialEq, Default)]
 pub(crate) struct RunningAverage<T>
-where
-    T: Sum<T> + Copy + Div<u32>,
+    where
+        T: Copy +  Sum<T> + Div<u32>,
 {
     durations: VecDeque<T>,
-    window_size: u16, // to never overflow usize (on any platform)
+    pub window_size: u16, // to never overflow usize (on any platform)
 }
 
 impl<T> RunningAverage<T>
-where
-    T: Sum<T> + Copy + Div<u32>,
+    where
+        T: Copy + Sum<T> + Div<u32>,
 {
     pub fn default() -> Self {
         Self {
@@ -81,7 +53,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::perf::RunningAverage;
+    use crate::compute::running_average::RunningAverage;
     use std::time::Duration;
 
     #[test]

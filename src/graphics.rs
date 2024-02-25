@@ -36,6 +36,7 @@ pub(crate) fn update(d: &mut impl Updatable, v: &impl Viewable) {
     d.update(v.render());
 }
 
+//Note : top caller for draw => Same API as Drawable !
 pub(crate) async fn render(d: &impl Drawable, pos: IVec2) {
     //
     // pub(crate) async fn update(&mut self, viewable: &mut impl Drawable) {

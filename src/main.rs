@@ -7,10 +7,10 @@ mod actor;
 mod compute;
 mod graphics;
 mod life;
-mod perf;
 
 use crate::actor::{Actor, Computable};
 use crate::compute::discrete::DiscreteTime;
+use crate::compute::rate_limiter::RateLimiter;
 use crate::compute::Compute;
 use crate::graphics::sprite::Sprite;
 use crate::graphics::view::Viewable;
@@ -45,8 +45,8 @@ async fn main() {
     // => the inner structure of the nested loops' states should probably be reflected here somehow ?
 
     // let mut simulation = Simulation::new(life::world::World::new(w, h), 32);
-    let mut simulation =
-        compute::discrete::DiscreteTime::new(life::quad::Quad::new(w, h)).with_max_update_rate(5.);
+    let mut simulation = compute::discrete::DiscreteTime::new(life::quad::Quad::new(w, h))
+        .with_limiter(RateLimiter::default().with_maximum_rate(5.));
 
     let sprite = graphics::sprite::Sprite::from_image(simulation.render());
 
@@ -83,7 +83,7 @@ async fn main() {
         // CAREFUL : Simulation could also be called multiple times, just to finish one full Update...
 
         // attempt (TODO) multiple total Update on (possibly linear) simulation
-        lifeworld.update(last_update.elapsed(), Some(available_sim_duration));
+        lifeworld.compute(last_update.elapsed(), Some(available_sim_duration));
 
         last_update = Instant::now();
 

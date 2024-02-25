@@ -1,11 +1,13 @@
 use crate::graphics::quad::Drawable;
+use crate::life::quad::Quad;
 use macroquad::math::IVec2;
 use macroquad::prelude::Image;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 pub(crate) trait Computable {
-    //TODO : rename to compute !!
-    fn update(&mut self, elapsed: Duration, constraint: Option<Duration>);
+    fn compute(&mut self, elapsed: Duration, constraint: Option<Duration>);
+
+    // TODO some kind of progress measurement ?
 }
 
 pub(crate) struct Actor<C, G> {
@@ -27,8 +29,8 @@ where
     G: Drawable,
 {
     #[inline]
-    fn update(&mut self, elapsed: Duration, constraint: Option<Duration>) {
-        self.compute.update(elapsed, constraint)
+    fn compute(&mut self, elapsed: Duration, constraint: Option<Duration>) {
+        self.compute.compute(elapsed, constraint)
     }
 }
 
