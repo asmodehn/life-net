@@ -44,10 +44,10 @@ async fn main() {
     // => the inner structure of the nested loops' states should probably be reflected here somehow ?
 
     // let mut simulation = Simulation::new(life::world::World::new(w, h), 32);
-    let mut simulation = compute::discrete::DiscreteTime::new(life::quad::Quad::new(w, h))
-        .with_limiter(RateLimiter::default().with_maximum_rate(5.));
+    // let mut simulation = compute::discrete::DiscreteTime::new(life::quad::Quad::new(w, h))
+    //     .with_limiter(RateLimiter::default().with_maximum_rate(5.));
 
-    let sprite = graphics::sprite::Sprite::from_image(simulation.render());
+    // let sprite = graphics::sprite::Sprite::from_image(simulation.render());
 
     //NOT USe anymore
     // let mut screen = graphics::view::View::new(&simulation.world.image, 60);
@@ -62,6 +62,7 @@ async fn main() {
     // let mut quadactor: Actor<life::quad::Quad, Sprite> = Actor::new(lifequad, sprite );
 
     let mut compute_context = compute::ComputeCtx::default();
+    //TODO : add limiter to compute context here...
 
     // TODO : generic throttled loop here
     loop {
@@ -77,7 +78,7 @@ async fn main() {
 
         compute_context.set_constraint(available_sim_duration);
 
-        compute_context = compute::compute_partial(compute_context, &mut lifequad);
+        compute_context = compute::compute_partial(&mut lifequad, compute_context);
 
         //TODO : put this in UI (useful only if different from FPS...)
         // let ups = simulation.get_updates_per_second();

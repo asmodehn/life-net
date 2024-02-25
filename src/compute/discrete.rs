@@ -35,35 +35,36 @@ impl Viewable for DiscreteTime {
     }
 }
 
-impl Compute for DiscreteTime {
-    fn update_timer_tick(&mut self) {
-        self.limiter
-            .average_duration
-            .record(self.full_update_timer.elapsed_and_reset())
-    }
-
-    fn get_updates_per_second(&self) -> Option<f32> {
-        self.limiter
-            .average_duration
-            .average()
-            .and_then(|d| Some(1. / d.as_secs_f32()))
-    }
-
-    fn get_max_update_duration(&self) -> Option<Duration> {
-        match self.limiter.limit_rate() {
-            None => None,
-            Some(update_rate) => Some(Duration::from_secs_f32(1. / update_rate)),
-        }
-    }
-
-    fn is_ups_over_max(&self) -> bool {
-        match (self.limiter.limit_rate(), self.get_updates_per_second()) {
-            (None, _) => false,
-            (_, None) => false,
-            (Some(max_ups), Some(ups)) => ups >= max_ups as f32,
-        }
-    }
-}
+//TODO : move this somewher else  !!!
+// impl Compute for DiscreteTime {
+//     fn update_timer_tick(&mut self) {
+//         self.limiter
+//             .average_duration
+//             .record(self.full_update_timer.elapsed_and_reset())
+//     }
+//
+//     fn get_updates_per_second(&self) -> Option<f32> {
+//         self.limiter
+//             .average_duration
+//             .average()
+//             .and_then(|d: Duration| Some(1. / d.as_secs_f32()))
+//     }
+//
+//     fn get_max_update_duration(&self) -> Option<Duration> {
+//         match self.limiter.limit_rate() {
+//             None => None,
+//             Some(update_rate) => Some(Duration::from_secs_f32(1. / update_rate)),
+//         }
+//     }
+//
+//     fn is_ups_over_max(&self) -> bool {
+//         match (self.limiter.limit_rate(), self.get_updates_per_second()) {
+//             (None, _) => false,
+//             (_, None) => false,
+//             (Some(max_ups), Some(ups)) => ups >= max_ups as f32,
+//         }
+//     }
+// }
 
 // impl crate::compute::PartialComputable for DiscreteTime {
 //     fn compute_partial(&mut self, elapsed: Duration, until: impl Fn() -> bool) {

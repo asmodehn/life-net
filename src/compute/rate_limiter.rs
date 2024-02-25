@@ -12,18 +12,11 @@ impl Default for RateLimiter {
     fn default() -> Self {
         Self {
             max_duration: None,
-            average_duration: RunningAverage::<Duration>::new(1),
+            average_duration: RunningAverage::<Duration>::new(60),
         }
     }
 }
 impl RateLimiter {
-    pub fn with_sample_window(self, window_size: u16) -> Self {
-        Self {
-            average_duration: RunningAverage::<Duration>::new(window_size),
-            ..self
-        }
-    }
-
     pub fn with_maximum_duration(self, maxd: Duration) -> Self {
         Self {
             max_duration: Some(maxd),
@@ -41,10 +34,6 @@ impl RateLimiter {
 
     pub fn limit_rate(&self) -> Option<f32> {
         self.max_duration.and_then(|d| Some(d.as_secs_f32()))
-    }
-
-    pub fn window_size(&self) -> u16 {
-        self.average_duration.window_size
     }
 
     //TODO : adaptative, PID, or so ?? => benchmark needed !

@@ -1,50 +1,44 @@
+use macroquad::miniquad::TextureAccess::Static;
+use ringbuf::ring_buffer::RbRead;
+use ringbuf::SharedRb;
+use ringbuf::{Producer, Rb};
+use std::cell::Cell;
 use std::collections::VecDeque;
 use std::iter::Sum;
+use std::mem::MaybeUninit;
 use std::ops::Div;
+use std::sync::RwLock;
 
-#[derive(Debug, PartialEq, Default)]
+//Note: we need to be Sync to be able to be static
+
 pub(crate) struct RunningAverage<T>
 where
-    T: Copy + Sum<T> + Div<u32>,
+    T: Copy + for<'t> Sum<&'t T> + Div<u32, Output = T>,
 {
-    durations: VecDeque<T>,
-    pub window_size: u16, // to never overflow usize (on any platform)
+    window_size: u16,
+    durations: RwLock<SharedRb<T, Vec<MaybeUninit<T>>>>,
 }
 
 impl<T> RunningAverage<T>
 where
-    T: Copy + Sum<T> + Div<u32>,
+    T: Copy + for<'t> Sum<&'t T> + Div<u32, Output = T>,
 {
-    pub fn default() -> Self {
-        Self {
-            // timed_since: None,
-            durations: VecDeque::new(),
-            window_size: 1,
-        }
-    }
     pub fn new(window_size: u16) -> Self {
         Self {
             window_size,
-            durations: VecDeque::with_capacity(window_size as usize),
+            durations: RwLock::new(SharedRb::<T, Vec<_>>::new(window_size as usize)),
         }
     }
 
-    pub fn with_measured(self, duration: T) -> Self {
-        let mut s = self;
-        s.record(duration);
-        s
+    pub fn record(&self, duration: T) {
+        let mut slot = self.durations.write().unwrap();
+        slot.push_overwrite(duration);
     }
 
-    pub fn record(&mut self, duration: T) {
-        self.durations.push_back(duration);
-        if self.durations.len() > self.window_size as usize {
-            self.durations.pop_front();
-        }
-    }
-
-    pub fn average(&self) -> Option<<T as Div<u32>>::Output> {
-        let measurements_sum: T = self.durations.clone().into_iter().sum::<T>();
-        match self.durations.len() {
+    pub fn average(&self) -> Option<T> {
+        let reader = self.durations.read().unwrap();
+        let measurements_sum: T = reader.iter().sum();
+        match reader.len() {
             0 => None,
             l => Some(measurements_sum.div(l as u32)),
         }
@@ -53,41 +47,61 @@ where
 
 #[cfg(test)]
 mod tests {
+    use ringbuf::Rb;
+
     use crate::compute::running_average::RunningAverage;
     use std::time::Duration;
 
     #[test]
-    fn default_duration_check() {
-        assert!(RunningAverage::<Duration>::default().durations.is_empty());
-        assert_eq!(RunningAverage::<Duration>::default().average(), None);
+    fn empty_measurements_check() {
+        assert_eq!(
+            RunningAverage::<Duration>::new(5).average(),
+            None::<Duration>
+        );
     }
 
     #[test]
     fn measurement_inside_window_ok() {
         let mut da = RunningAverage::<Duration>::new(5);
-        da = da
-            .with_measured(Duration::new(1, 0))
-            .with_measured(Duration::new(2, 0))
-            .with_measured(Duration::new(3, 0));
+        da.record(Duration::new(1, 0));
+        da.record(Duration::new(2, 0));
+        da.record(Duration::new(3, 0));
 
         assert_eq!(da.average(), Some(Duration::new(2, 0)));
-        // assert_eq!(da.per_second(), Some(0.5))
     }
 
     #[test]
     fn measurement_outside_window_dropped() {
         let mut da = RunningAverage::<Duration>::new(5);
-        da = da
-            .with_measured(Duration::new(1, 0))
-            .with_measured(Duration::new(2, 0))
-            .with_measured(Duration::new(3, 0))
-            .with_measured(Duration::new(4, 0))
-            .with_measured(Duration::new(5, 0))
-            .with_measured(Duration::new(6, 0));
+        da.record(Duration::new(1, 0));
+        da.record(Duration::new(2, 0));
+        da.record(Duration::new(3, 0));
+        da.record(Duration::new(4, 0));
+        da.record(Duration::new(5, 0));
+        da.record(Duration::new(6, 0));
+
+        assert_eq!(da.average(), Some(Duration::new(4, 0)));
+
+        //assert_eq!(da.durations.len(), 5);
+    }
+
+    #[test]
+    fn measurement_outside_capacity_dropped() {
+        let mut da = RunningAverage::<Duration>::new(5);
+        //assert_eq!(da.durations.capacity(), 5); // TODO : shouldnt that be ^2 for speed ??
+
+        da.record(Duration::new(1, 0));
+        da.record(Duration::new(2, 0));
+        da.record(Duration::new(3, 0));
+        da.record(Duration::new(4, 0));
+        da.record(Duration::new(5, 0));
+        da.record(Duration::new(6, 0));
 
         assert_eq!(da.average(), Some(Duration::new(4, 0)));
         // assert_eq!(da.per_second(), Some(0.25));
 
-        assert_eq!(da.durations.len(), 5);
+        //assert_eq!(da.durations.len(), 5);
     }
+
+    //TODO : benchmarks (capcity size, etc.) !
 }

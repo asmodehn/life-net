@@ -2,6 +2,8 @@ use crate::compute::running_average::RunningAverage;
 use crate::compute::timer::Timer;
 use crate::graphics::quad::Drawable;
 use crate::graphics::view::Viewable;
+use once_cell::sync::Lazy;
+use std::cell::OnceCell;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
@@ -29,22 +31,24 @@ pub(crate) trait PartialComputable {
     fn update_completed(&self) -> bool; // TODO some kind of progress measurement ?
 }
 
-pub(crate) fn compute<C>(mut ctx: ComputeCtx, computable: &mut C) -> ComputeCtx
+static DURATION_AVERAGE: Lazy<RunningAverage<Duration>> =
+    Lazy::new(|| RunningAverage::<Duration>::new({ 5 * 60 }));
+
+const COMPUTE_TIMER: Lazy<Timer> = Lazy::new(|| Timer::default());
+
+pub(crate) fn compute<C>(computable: &mut C)
 where
     C: Computable,
 {
-    // static COMPUTE_TIMER: Mutex<Timer> = Mutex::new(Timer::default());
-
-    let elapsed = ctx.record_last_duration();
+    let elapsed = COMPUTE_TIMER.elapsed_and_reset();
+    DURATION_AVERAGE.record(elapsed);
 
     computable.compute(elapsed);
-
-    ctx
 }
 
 pub(crate) struct ComputeCtx {
-    compute_timer: Timer,
-    average_duration: RunningAverage<Duration>,
+    // compute_timer: Timer,
+    // average_duration: RunningAverage<Duration>,
     pub last_elapsed: Duration,
     constraint: Option<Duration>,
     inner_timer: Timer,
@@ -53,8 +57,8 @@ pub(crate) struct ComputeCtx {
 impl Default for ComputeCtx {
     fn default() -> Self {
         Self {
-            compute_timer: Timer::default(),
-            average_duration: RunningAverage::<Duration>::new(5 * 60),
+            // compute_timer: Timer::default(),
+            // average_duration: RunningAverage::<Duration>::new({5 * 60}),
             last_elapsed: Duration::MAX,
             constraint: None,
             inner_timer: Timer::default(),
@@ -74,11 +78,11 @@ impl ComputeCtx {
         self.constraint = Some(duration);
     }
 
-    pub(crate) fn record_last_duration(&mut self) -> Duration {
-        let elapsed = self.compute_timer.elapsed_and_reset();
-        self.average_duration.record(elapsed);
-        elapsed
-    }
+    // pub(crate) fn record_last_duration(&mut self) -> Duration {
+    //     let elapsed = self.compute_timer.elapsed_and_reset();
+    //     self.average_duration.record(elapsed);
+    //     elapsed
+    // }
 
     fn reset_timer(&self) {
         self.inner_timer.elapsed_and_reset(); //ignoring elapsed measurement
@@ -97,15 +101,15 @@ impl ComputeCtx {
     }
 }
 
-pub(crate) fn compute_partial<PC>(mut ctx: ComputeCtx, computable: &mut PC) -> ComputeCtx
+pub(crate) fn compute_partial<PC>(computable: &mut PC, mut ctx: ComputeCtx) -> ComputeCtx
 where
     PC: PartialComputable,
 {
-    //inner partial compute timer
     ctx.reset_timer();
 
     if computable.update_completed() {
-        let elapsed = ctx.record_last_duration();
+        let elapsed = COMPUTE_TIMER.elapsed_and_reset();
+        DURATION_AVERAGE.record(elapsed);
         ctx.last_elapsed = elapsed;
     }
 
@@ -128,7 +132,7 @@ mod tests {
         q.image.update(&[cell::ALIVE]);
 
         //one update
-        compute::compute(ComputeCtx::default(), &mut q);
+        compute::compute(&mut q);
 
         assert_eq!(q.image.get_pixel(0, 0), cell::DEAD)
     }
@@ -138,7 +142,7 @@ mod tests {
         q.image.update(&[cell::ALIVE]);
 
         //one update
-        compute::compute_partial(ComputeCtx::default(), &mut q);
+        compute::compute_partial(&mut q, ComputeCtx::default());
 
         assert_eq!(q.image.get_pixel(0, 0), cell::DEAD)
     }
@@ -150,7 +154,7 @@ mod tests {
         q.image.update(&[cell::ALIVE; 4]);
 
         //one update
-        compute::compute(ComputeCtx::default(), &mut q);
+        compute::compute(&mut q);
 
         assert_eq!(q.image.get_pixel(0, 0), cell::ALIVE);
         assert_eq!(q.image.get_pixel(0, 1), cell::ALIVE);
@@ -164,7 +168,7 @@ mod tests {
         q.image.update(&[cell::ALIVE; 4]);
 
         //one update
-        compute::compute_partial(ComputeCtx::default(), &mut q);
+        compute::compute_partial(&mut q, ComputeCtx::default());
 
         assert_eq!(q.image.get_pixel(0, 0), cell::ALIVE);
         assert_eq!(q.image.get_pixel(0, 1), cell::ALIVE);
