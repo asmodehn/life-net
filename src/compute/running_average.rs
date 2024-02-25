@@ -4,16 +4,16 @@ use std::ops::Div;
 
 #[derive(Debug, PartialEq, Default)]
 pub(crate) struct RunningAverage<T>
-    where
-        T: Copy +  Sum<T> + Div<u32>,
+where
+    T: Copy + Sum<T> + Div<u32>,
 {
     durations: VecDeque<T>,
     pub window_size: u16, // to never overflow usize (on any platform)
 }
 
 impl<T> RunningAverage<T>
-    where
-        T: Copy + Sum<T> + Div<u32>,
+where
+    T: Copy + Sum<T> + Div<u32>,
 {
     pub fn default() -> Self {
         Self {

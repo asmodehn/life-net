@@ -1,4 +1,3 @@
-use crate::actor;
 use crate::compute::rate_limiter::RateLimiter;
 use crate::compute::timer::Timer;
 use crate::compute::Compute;
@@ -66,31 +65,27 @@ impl Compute for DiscreteTime {
     }
 }
 
-impl actor::Computable for DiscreteTime {
-    fn compute(&mut self, elapsed: Duration, constraint: Option<Duration>) {
-        let update_constraint = match constraint {
-            None => self.limiter.max_duration,
-            Some(d) => self.limiter.with_constraint(d),
-        };
-
-        let until_closure = {
-            let compute_timer = Instant::now();
-            move |quad: &Quad| {
-                //return bool to decide to stop or not (because of one compute constraint, or global update per second limit)
-                update_constraint.is_some_and(|d| d <= compute_timer.elapsed())
-            }
-        };
-
-        //one update maximum :
-        // - if faster than required, lets rely on caller to call us again
-        // - if slower than needed, let's get out early.
-        self.world.compute_once_or_until(until_closure);
-
-        //if update was finished, increment timer
-        if self.world.is_updated() {
-            self.update_timer_tick();
-        }
-    }
-}
-
-//TODO : test timers behavior (via injection of deterministic timer...)
+// impl crate::compute::PartialComputable for DiscreteTime {
+//     fn compute_partial(&mut self, elapsed: Duration, until: impl Fn() -> bool) {
+//         //
+//         // let until_closure = {
+//         //     let compute_timer = Instant::now();
+//         //     move |quad: &Quad| {
+//         //         until(self) || self.limiter.is_some_and(|d| d <= compute_timer.elapsed())}
+//         //         //return bool to decide to stop or not (because of one compute constraint, or global update per second limit)
+//         // };
+//
+//         //one update maximum :
+//         // - if faster than required, lets rely on caller to call us again
+//         // - if slower than needed, let's get out early.
+//         self.world.compute_once_or_until(until_closure);
+//
+//         //if update was finished, increment timer
+//         if self.world.is_updated() {
+//             self.update_timer_tick();
+//         }
+//     }
+//     fn update_completed(&self) -> bool {
+//         self.world.is_updated()
+//     }
+// }

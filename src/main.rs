@@ -3,15 +3,14 @@
 extern crate core;
 extern crate test;
 
-mod actor;
 mod compute;
 mod graphics;
 mod life;
 
-use crate::actor::{Actor, Computable};
 use crate::compute::discrete::DiscreteTime;
 use crate::compute::rate_limiter::RateLimiter;
 use crate::compute::Compute;
+use crate::compute::{Computable, PartialComputable};
 use crate::graphics::sprite::Sprite;
 use crate::graphics::view::Viewable;
 use macroquad::prelude::*;
@@ -50,9 +49,6 @@ async fn main() {
 
     let sprite = graphics::sprite::Sprite::from_image(simulation.render());
 
-    //TMP : whole world in one actor. => TODO : multiple actors in a world...
-    let mut lifeworld: Actor<DiscreteTime, Sprite> = Actor::new(simulation, sprite);
-
     //NOT USe anymore
     // let mut screen = graphics::view::View::new(&simulation.world.image, 60);
 
@@ -60,18 +56,12 @@ async fn main() {
 
     // TODO : scene, for all relative positioning...
 
-    // API GOAL:
-    // display::show(
-    //      simulation::run(world, limiter /* some kind of customisable CPU limiter*/),
-    //      /*optional gui ? */
-    //      /* optional audio ?  ==> HOW ? maybe different API with hecs ?? */
-    //      60 /*FPS : the traditional GPU limiter */
-    // ).await;
-    // OR
-    // let engine = Engine{ display: , audio: , simulation: }
-    // engine.run().await;
+    let mut lifequad = life::quad::Quad::new(w, h);
+    let mut sprite = Sprite::from_image(lifequad.render());
 
-    let mut last_update = Instant::now();
+    // let mut quadactor: Actor<life::quad::Quad, Sprite> = Actor::new(lifequad, sprite );
+
+    let mut compute_context = compute::ComputeCtx::default();
 
     // TODO : generic throttled loop here
     loop {
@@ -83,9 +73,11 @@ async fn main() {
         // CAREFUL : Simulation could also be called multiple times, just to finish one full Update...
 
         // attempt (TODO) multiple total Update on (possibly linear) simulation
-        lifeworld.compute(last_update.elapsed(), Some(available_sim_duration));
+        // lifeworld.compute_partial(last_update.elapsed(), Some(available_sim_duration));
 
-        last_update = Instant::now();
+        compute_context.set_constraint(available_sim_duration);
+
+        compute_context = compute::compute_partial(compute_context, &mut lifequad);
 
         //TODO : put this in UI (useful only if different from FPS...)
         // let ups = simulation.get_updates_per_second();
@@ -95,8 +87,8 @@ async fn main() {
 
         // screen.update(&mut simulation).await;
 
-        graphics::update(&mut lifeworld.graphics, &lifeworld.compute);
+        graphics::update(&mut sprite, &lifequad);
 
-        graphics::render(&lifeworld.graphics, IVec2::new(0, 0)).await;
+        graphics::render(&sprite, IVec2::new(0, 0)).await;
     }
 }

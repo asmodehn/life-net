@@ -1,3 +1,6 @@
+use crate::compute::discrete::DiscreteTime;
+use crate::compute::{Computable, PartialComputable};
+use crate::graphics::view::Viewable;
 use crate::life::cell;
 use crate::life::cell::{ALIVE, DEAD};
 use itertools::iproduct;
@@ -122,7 +125,7 @@ impl Quad {
     }
 
     // TODO : rename -> update_until !
-    pub(crate) fn compute_once_or_until(&mut self, mut until: impl FnMut(&Self) -> bool) {
+    pub(crate) fn compute_once_or_until(&mut self, mut until: impl Fn() -> bool) {
         loop {
             //check for completion
             if self.is_updated() {
@@ -146,10 +149,34 @@ impl Quad {
 
             //late until to ensure some progress
             //can mutate itself !
-            if until(self) {
+            if until() {
                 break;
             }
         }
+    }
+}
+
+impl PartialComputable for Quad {
+    fn compute_partial(&mut self, _elapsed: Duration, until: impl Fn() -> bool) {
+        self.compute_once_or_until(until)
+    }
+
+    fn update_completed(&self) -> bool {
+        self.is_updated()
+    }
+}
+
+impl Computable for Quad {
+    fn compute(&mut self, _elapsed: Duration) {
+        self.compute_once();
+    }
+}
+
+impl Viewable for Quad {
+    fn render(&self) -> &Image {
+        // self.world.render()
+        // no need to render with a quad
+        &self.image
     }
 }
 
@@ -181,7 +208,7 @@ mod tests {
 
         q.image.update(&[cell::ALIVE]);
 
-        q.compute_once_or_until(|_s| true);
+        q.compute_once_or_until(|| true);
 
         assert_eq!(q.image.get_pixel(0, 0), DEAD);
     }
@@ -208,7 +235,7 @@ mod tests {
         q.image.update(&[cell::ALIVE; 4]);
 
         //one update
-        q.compute_once_or_until(|_s| true);
+        q.compute_once_or_until(|| true);
 
         assert_eq!(q.image.get_pixel(0, 0), cell::ALIVE);
         assert_eq!(q.image.get_pixel(0, 1), cell::ALIVE);

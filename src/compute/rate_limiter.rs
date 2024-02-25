@@ -5,7 +5,7 @@ use std::time::{Duration, Instant};
 
 pub(crate) struct RateLimiter {
     pub(crate) max_duration: Option<Duration>,
-    pub(crate) average_duration: RunningAverage<Duration>,
+    pub(crate) average_duration: RunningAverage<Duration>, // TODO : This should be passed as argument in functions that need it..
 }
 
 impl Default for RateLimiter {
@@ -66,3 +66,5 @@ impl RateLimiter {
         self.average_duration.record(duration);
     }
 }
+
+//TODO : test timers behavior (via injection of deterministic timer...)
