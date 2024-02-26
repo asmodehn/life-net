@@ -1,5 +1,4 @@
 use crate::graphics::quad::{Drawable, Updatable};
-use crate::graphics::view::Viewable;
 use macroquad::color::{RED, YELLOW};
 use macroquad::math::IVec2;
 use macroquad::prelude::{
@@ -17,6 +16,10 @@ mod texture;
 pub(crate) mod view;
 
 const DEFAULT_BACKGROUND: Color = RED;
+
+pub trait Viewable {
+    fn render(&self) -> &Image;
+}
 
 pub fn last_frame_time() -> Duration {
     Duration::from_secs_f32(get_frame_time())

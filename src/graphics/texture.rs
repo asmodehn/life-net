@@ -1,6 +1,6 @@
 use crate::graphics::quad::{Drawable, Quad};
 use macroquad::math::{IVec2, UVec2};
-use macroquad::prelude::{draw_rectangle, draw_texture, Color, FilterMode, Image, Texture2D};
+use macroquad::prelude::{draw_texture, Color, FilterMode, Image, Texture2D};
 
 struct Texture {
     color: Color,

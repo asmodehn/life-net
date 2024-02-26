@@ -8,10 +8,7 @@ use macroquad::ui;
 use std::time::Duration;
 
 use crate::graphics::quad::{Drawable, Updatable};
-
-pub trait Viewable {
-    fn render(&self) -> &Image;
-}
+use crate::graphics::Viewable;
 
 pub struct View {
     sprite: Sprite, // TODO Extend this in std::collections::HashMap to get z order

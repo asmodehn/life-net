@@ -7,15 +7,11 @@ mod compute;
 mod graphics;
 mod life;
 
-use crate::compute::discrete::DiscreteTime;
-use crate::compute::rate_limiter::RateLimiter;
-use crate::compute::Compute;
-use crate::compute::{Computable, PartialComputable};
+use crate::compute::ComputeCtx;
 use crate::graphics::sprite::Sprite;
-use crate::graphics::view::Viewable;
+use crate::graphics::Viewable;
 use macroquad::prelude::*;
-use macroquad::ui;
-use std::time::Instant;
+use std::time::Duration;
 
 fn window_conf() -> Conf {
     Conf {
@@ -43,15 +39,6 @@ async fn main() {
     //We want a functional architecture
     // => the inner structure of the nested loops' states should probably be reflected here somehow ?
 
-    // let mut simulation = Simulation::new(life::world::World::new(w, h), 32);
-    // let mut simulation = compute::discrete::DiscreteTime::new(life::quad::Quad::new(w, h))
-    //     .with_limiter(RateLimiter::default().with_maximum_rate(5.));
-
-    // let sprite = graphics::sprite::Sprite::from_image(simulation.render());
-
-    //NOT USe anymore
-    // let mut screen = graphics::view::View::new(&simulation.world.image, 60);
-
     // TODO : View ==> Scene
 
     // TODO : scene, for all relative positioning...
@@ -59,12 +46,9 @@ async fn main() {
     let mut lifequad = life::quad::Quad::new(w, h);
     let mut sprite = Sprite::from_image(lifequad.render());
 
-    // let mut quadactor: Actor<life::quad::Quad, Sprite> = Actor::new(lifequad, sprite );
+    let mut compute_context =
+        ComputeCtx::default().with_constraint(Duration::from_secs_f32(1. / 60.));
 
-    let mut compute_context = compute::ComputeCtx::default();
-    //TODO : add limiter to compute context here...
-
-    // TODO : generic throttled loop here
     loop {
         let available_sim_duration =
             graphics::target_frame_time(60.0).saturating_sub(graphics::last_frame_time());

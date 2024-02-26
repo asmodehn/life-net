@@ -1,6 +1,5 @@
-use crate::compute::discrete::DiscreteTime;
 use crate::compute::{Computable, PartialComputable};
-use crate::graphics::view::Viewable;
+use crate::graphics::Viewable;
 use crate::life::cell;
 use crate::life::cell::{ALIVE, DEAD};
 use itertools::iproduct;
@@ -8,7 +7,7 @@ use macroquad::color::Color;
 use macroquad::prelude::Image;
 use macroquad::rand::ChooseRandom;
 use std::ops::Deref;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 struct ImageUpdate {
     width: u16,
@@ -185,10 +184,8 @@ mod tests {
     use crate::life::cell;
     use crate::life::cell::{ALIVE, DEAD};
     use crate::life::quad::Quad;
-    use std::time::Duration;
 
     use test::Bencher;
-    use test::RunIgnored::No;
 
     #[test]
     fn cell_dies_alone() {

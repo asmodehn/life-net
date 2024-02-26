@@ -1,6 +1,6 @@
-use crate::graphics::view::Viewable;
+use crate::graphics::Viewable;
 use crate::life::cell;
-use macroquad::color::{BLACK, WHITE};
+use macroquad::color::WHITE;
 use macroquad::prelude::Image;
 use std::time::Duration;
 

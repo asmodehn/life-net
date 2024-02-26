@@ -1,24 +1,23 @@
 use crate::compute::running_average::RunningAverage;
 use crate::compute::timer::Timer;
 use crate::graphics::quad::Drawable;
-use crate::graphics::view::Viewable;
 use once_cell::sync::Lazy;
-use std::cell::OnceCell;
-use std::sync::Mutex;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
-mod continuous;
-pub(crate) mod discrete;
 pub(crate) mod rate_limiter;
 pub(crate) mod running_average;
 mod timer;
 
-pub(crate) trait Compute: Viewable {
-    fn update_timer_tick(&mut self);
+fn last_update_duration() -> Duration {
+    let elapsed = COMPUTE_TIMER.elapsed_and_reset();
+    DURATION_AVERAGE.record(elapsed);
+    elapsed
+}
 
-    fn get_updates_per_second(&self) -> Option<f32>;
-    fn get_max_update_duration(&self) -> Option<Duration>;
-    fn is_ups_over_max(&self) -> bool;
+fn get_updates_per_second() -> Option<f32> {
+    DURATION_AVERAGE
+        .average()
+        .and_then(|d: Duration| Some(1. / d.as_secs_f32()))
 }
 
 pub(crate) trait Computable {
@@ -67,7 +66,7 @@ impl Default for ComputeCtx {
 }
 
 impl ComputeCtx {
-    fn with_constraint(self, duration: Duration) -> Self {
+    pub(crate) fn with_constraint(self, duration: Duration) -> Self {
         Self {
             constraint: Some(duration),
             ..self
@@ -78,10 +77,19 @@ impl ComputeCtx {
         self.constraint = Some(duration);
     }
 
-    // pub(crate) fn record_last_duration(&mut self) -> Duration {
-    //     let elapsed = self.compute_timer.elapsed_and_reset();
-    //     self.average_duration.record(elapsed);
-    //     elapsed
+    // fn get_max_update_duration(&self) -> Option<Duration> {
+    //     match self.limiter.limit_rate() {
+    //         None => None,
+    //         Some(update_rate) => Some(Duration::from_secs_f32(1. / update_rate)),
+    //     }
+    // }
+    //
+    // fn is_ups_over_max(&self) -> bool {
+    //     match (self.limiter.limit_rate(), self.get_updates_per_second()) {
+    //         (None, _) => false,
+    //         (_, None) => false,
+    //         (Some(max_ups), Some(ups)) => ups >= max_ups as f32,
+    //     }
     // }
 
     fn reset_timer(&self) {
@@ -122,7 +130,7 @@ where
 #[cfg(test)]
 mod tests {
     use crate::compute;
-    use crate::compute::{Computable, ComputeCtx};
+    use crate::compute::ComputeCtx;
     use crate::life::cell;
     use crate::life::quad::Quad;
 

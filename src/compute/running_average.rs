@@ -1,9 +1,6 @@
-use macroquad::miniquad::TextureAccess::Static;
 use ringbuf::ring_buffer::RbRead;
+use ringbuf::Rb;
 use ringbuf::SharedRb;
-use ringbuf::{Producer, Rb};
-use std::cell::Cell;
-use std::collections::VecDeque;
 use std::iter::Sum;
 use std::mem::MaybeUninit;
 use std::ops::Div;
