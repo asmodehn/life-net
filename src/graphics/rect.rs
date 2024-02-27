@@ -3,7 +3,7 @@ use macroquad::math::{IVec2, UVec2};
 use macroquad::prelude::{draw_rectangle, Color};
 
 struct Rect {
-    color: Color,
+    color: Color, // TODO : This ias a quad (dont mix up with macroquad Rect...)
     dimensions: UVec2,
 }
 //TODO : GLOBAL/Scene-projected position ??

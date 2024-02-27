@@ -1,5 +1,7 @@
 #![feature(test)]
 #![feature(slice_pattern)]
+#![feature(generic_const_exprs)]
+#![feature(const_trait_impl)]
 extern crate core;
 extern crate test;
 

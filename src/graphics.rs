@@ -9,6 +9,8 @@ use std::time::Duration;
 
 // mod ui;
 // mod scene;
+mod color;
+mod image;
 pub(crate) mod quad;
 mod rect;
 pub(crate) mod sprite;
