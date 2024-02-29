@@ -4,7 +4,6 @@ use crate::graphics::color::rgb::{RGB32, RGB8};
 pub(crate) mod monochrome;
 pub(crate) mod rgb;
 pub(crate) mod rgba;
-mod traits;
 
 //todo : Custom ColorCode trait adding useful common functionality to all color types
 
@@ -31,17 +30,25 @@ trait Pixel<C: Channel, const components: u8> {
         C::bpc() * components as u32
     }
 
-    fn as_array(self) -> [C; components as usize];
-    fn as_slice(&self) -> &[C; components as usize];
+    fn as_array(self) -> [C; components as usize]
+    where
+        Self: Sized,
+    {
+        todo!()
+    }
+
+    fn as_slice(&self) -> &[C; components as usize] {
+        todo!()
+    }
 }
 
 impl Pixel<ColorByte, 1> for ColorByte {
     fn as_array(self) -> [ColorByte; 1] {
-        todo!()
+        [self]
     }
 
     fn as_slice(&self) -> &[ColorByte; 1] {
-        todo!()
+        std::slice::from_ref(self).try_into().unwrap()
     }
 }
 

@@ -12,6 +12,9 @@ pub type ColorByte = u8;
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Monochrome(f32);
 
+const BLACK: Monochrome = Monochrome(0f32);
+const WHITE: Monochrome = Monochrome(1f32);
+
 impl Default for Monochrome {
     fn default() -> Self {
         Self(*Self::RANGE.start())
@@ -93,18 +96,18 @@ mod tests {
     #[test]
     fn check_u8_into_monochrome() {
         let g: Monochrome = 255u8.into();
-        assert_eq!(g.into_inner(), 1f32)
+        assert_eq!(g, 1f32)
     }
 
     #[test]
     fn check_monochrome_from_f32() {
         let g = Monochrome::try_from(1f32).unwrap();
-        assert_eq!(g.into_inner(), 1f32)
+        assert_eq!(g, 1f32)
     }
     #[test]
     fn check_f32_into_monochrome() {
         let g: Monochrome = 1f32.try_into().unwrap();
-        assert_eq!(g.into_inner(), 1f32)
+        assert_eq!(g, 1f32)
     }
 
     #[test]
