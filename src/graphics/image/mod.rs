@@ -1,43 +1,45 @@
-mod gen;
 mod grayscale;
 mod rgb;
+mod rgba;
 
-//
-// use std::ffi::c_schar;
-// use macroquad::math::Rect;
-// use grayscale::Grayscale8;
-// use rgb::RGBImage;
-// use crate::graphics::color::monochrome::Monochrome;
-// use crate::graphics::color::rgb::{RGB8, RGB32};
-// use crate::graphics::image::grayscale::{Grayscale8, Grayscale32};
-// use rgba::RGBAImage;
-// use rgba::RGBA;
+use crate::graphics::color::{Channel, Pixel};
+use macroquad::math::Rect;
 
-// impl From<Grayscale8> for RGB8 {
-//     fn from(image: Grayscale8) -> Self {
-//
-//         let width = image.width;
-//         let height = image.height;
-//
-//         let mut bytes: Vec<RGB8> = Vec::with_capacity((width * height) as usize);
-//         let origin = image.get_image_data();
-//
-//         let mut n = 0;
-//         for p in 0..origin.len() {
-//             bytes[n] = RGB8::from([u8::from(origin[p]); 3]);
-//             n += 1;
-//         }
-//
-//         RGB8 {
-//             0: 0,
-//             1: 0,
-//             width,
-//             height,
-//             bytes,
-//             2: 0,
-//         }
-//     }
+// Note : A trait is a safe way (avoids maintenance overhead) to keep implementations similar.
+// But if they are *exactly* identical, then maybe we should have a generic struct instead ?
+pub(crate) trait Image<C: Channel, const components: u8> {
+    type P: Pixel<C, components>;
+
+    fn empty() -> Self;
+
+    fn generate(width: u16, height: u16, pixel: Self::P) -> Self;
+
+    fn update(&mut self, pixel_slice: &[Self::P]);
+
+    fn width(&self) -> usize;
+    fn height(&self) -> usize;
+    fn get_image_data(&self) -> &[Self::P];
+    fn get_image_data_mut(&mut self) -> &mut [Self::P];
+    fn set_pixel(&mut self, x: u32, y: u32, pixel: Self::P);
+
+    fn get_pixel(&self, x: u32, y: u32) -> Self::P;
+    fn sub_image(&self, rect: Rect) -> Self;
+}
+
+// TODO : in a separate texture module ?
+// pub(crate) struct RGBTexture<T: Pixel<Monochrome, 3>> {
+//     pub bytes: Vec<T>,
+//     pub width: u16,
+//     pub height: u16,
 // }
+//
+// pub(crate) struct RGBATexture<T: Pixel<Monochrome, 4>> {
+//     pub bytes: Vec<T>,
+//     pub width: u16,
+//     pub height: u16,
+// }
+
+//TODO : conversion with Macroquad structs (Image, etc.)
 
 #[cfg(test)]
 mod tests {}

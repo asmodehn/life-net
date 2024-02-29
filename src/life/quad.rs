@@ -63,6 +63,7 @@ pub struct Quad {
     update: Option<ImageUpdate>,
     updated_cb: fn(&mut Self),
 }
+//TODO :  a custom image format,  using a enum for state and an encoding with our Image Trait... => optimized
 
 impl Quad {
     pub fn new(width: u16, height: u16) -> Self {

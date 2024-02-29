@@ -1,22 +1,16 @@
-// use core::slice::SlicePattern;
-// use macroquad::color::Color;
-// use macroquad::math::Rect;
-// use macroquad::prelude::Image;
-// pub use crate::graphics::color::rgb::RGB;
-
-use crate::graphics::color::rgb::RGB8;
-use crate::graphics::color::Pixel;
+use crate::graphics::color::{RGB8, RGBA8};
+use crate::graphics::image::rgb::RGBImage;
 use crate::graphics::image::Image;
 use macroquad::math::Rect;
 
-pub(crate) struct RGBImage {
-    pub bytes: Vec<RGB8>,
+pub(crate) struct RGBAImage {
+    pub bytes: Vec<RGBA8>,
     pub width: u16,
     pub height: u16,
 }
 
-impl Image<u8, 3> for RGBImage {
-    type P = RGB8;
+impl Image<u8, 4> for RGBAImage {
+    type P = RGBA8;
 
     fn empty() -> Self {
         Self {
@@ -61,7 +55,6 @@ impl Image<u8, 3> for RGBImage {
     fn get_image_data_mut(&mut self) -> &mut [Self::P] {
         self.bytes.as_mut_slice()
     }
-
     fn set_pixel(&mut self, x: u32, y: u32, pixel: Self::P) {
         let width = self.width;
 
@@ -75,7 +68,7 @@ impl Image<u8, 3> for RGBImage {
     fn sub_image(&self, rect: Rect) -> Self {
         let width = rect.w as usize;
         let height = rect.h as usize;
-        let mut bytes: Vec<Self::P> = vec![Self::P::from([0u8; 3]); width * height * 3];
+        let mut bytes: Vec<Self::P> = vec![Self::P::from([0u8; 4]); width * height];
 
         let x = rect.x as usize;
         let y = rect.y as usize;
@@ -88,7 +81,7 @@ impl Image<u8, 3> for RGBImage {
                 n += 1;
             }
         }
-        RGBImage {
+        Self {
             width: width as u16,
             height: height as u16,
             bytes,
