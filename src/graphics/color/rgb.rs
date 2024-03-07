@@ -1,11 +1,8 @@
 use crate::graphics::color::monochrome::{ColorByte, Monochrome};
 use crate::graphics::color::Pixel;
-use macroquad::color::Color;
 use macroquad::math::{UVec3, Vec3};
 use std::fmt::Debug;
 use std::num::TryFromIntError;
-use std::{array, slice};
-// use crate::graphics::color::traits::{FromColor, IntoColor};
 
 // Newtype allowing for trait definitions (color encodig conversion f.i.)
 /// RGB8 : RGB encoded with 8bit per component

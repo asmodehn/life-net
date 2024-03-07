@@ -62,7 +62,8 @@ impl World {
 
         for y in 0..h {
             for x in 0..w {
-                self.buffer[y * w + x] = cell::update(&self.cells, x as i32, y as i32, w, h);
+                self.buffer[y * w + x] =
+                    cell::update(&self.cells, x as i32, y as i32, w as u16, h as u16);
             }
         }
         for i in 0..self.buffer.len() {

@@ -11,7 +11,9 @@ mod life;
 use crate::compute::ComputeCtx;
 use crate::graphics::sprite::Sprite;
 use crate::graphics::Viewable;
+use crate::life::cell;
 use macroquad::prelude::*;
+use std::ops::Deref;
 use std::time::Duration;
 
 fn window_conf() -> Conf {
@@ -24,6 +26,8 @@ fn window_conf() -> Conf {
         ..Default::default()
     }
 }
+
+const PARTIAL_UPDATE: bool = true;
 
 #[macroquad::main(window_conf)]
 async fn main() {
@@ -44,8 +48,8 @@ async fn main() {
 
     // TODO : scene, for all relative positioning...
 
-    let mut lifequad = life::quad::Quad::new(w, h);
-    let mut sprite = Sprite::from_image(lifequad.render());
+    let mut lifequad = life::quad::Quad::gen(cell::State::Dead, w, h).with_random_cells();
+    let mut sprite = Sprite::from_image(lifequad.render().borrow().deref());
 
     let mut compute_context =
         ComputeCtx::default().with_constraint(Duration::from_secs_f32(1. / 60.));
@@ -61,9 +65,14 @@ async fn main() {
         // attempt (TODO) multiple total Update on (possibly linear) simulation
         // lifeworld.compute_partial(last_update.elapsed(), Some(available_sim_duration));
 
-        compute_context.set_constraint(available_sim_duration);
-
-        compute_context = compute::compute_partial(&mut lifequad, compute_context);
+        if PARTIAL_UPDATE {
+            //PARTIAL UPDATE
+            compute_context.set_constraint(available_sim_duration);
+            compute_context = compute::compute_partial(&mut lifequad, compute_context);
+        } else {
+            //FULL UPDATE
+            compute::compute(&mut lifequad);
+        }
 
         //TODO : put this in UI (useful only if different from FPS...)
         // let ups = simulation.get_updates_per_second();

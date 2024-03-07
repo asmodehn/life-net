@@ -7,8 +7,8 @@ use macroquad::math::Rect;
 
 // Note : A trait is a safe way (avoids maintenance overhead) to keep implementations similar.
 // But if they are *exactly* identical, then maybe we should have a generic struct instead ?
-pub(crate) trait Image<C: Channel, const components: u8> {
-    type P: Pixel<C, components>;
+pub(crate) trait Image<C: Channel, const COMPONENTS: u8> {
+    type P: Pixel<C, COMPONENTS>;
 
     fn empty() -> Self;
 

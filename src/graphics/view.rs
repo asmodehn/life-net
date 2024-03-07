@@ -5,6 +5,7 @@ use macroquad::prelude::{
     clear_background, draw_texture, get_fps, get_frame_time, next_frame, Image, Texture2D,
 };
 use macroquad::ui;
+use std::ops::Deref;
 use std::time::Duration;
 
 use crate::graphics::quad::{Drawable, Updatable};
@@ -16,9 +17,10 @@ pub struct View {
 }
 
 impl View {
-    //Note : u16 here to render in the image
-    pub fn new(initial_image: &Image, target_fps: i32) -> Self {
-        let sprite = Sprite::from_image(initial_image);
+    pub fn new(viewable: &impl Viewable, target_fps: i32) -> Self {
+        let initial_image = viewable.render().borrow();
+
+        let sprite = Sprite::from_image(initial_image.deref());
         Self { sprite, target_fps }
     }
 
@@ -29,10 +31,10 @@ impl View {
     // OR : pass it into the run function only...
     // OR: a way to "link" image and texture...
 
-    pub(crate) async fn update(&mut self, viewable: &mut impl Viewable) {
+    pub(crate) async fn update(&mut self, viewable: &impl Viewable) {
         clear_background(RED);
 
-        self.sprite.update(viewable.render());
+        self.sprite.update(viewable.render().borrow().deref());
 
         let pos = IVec2::new(0, 0);
 

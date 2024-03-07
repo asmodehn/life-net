@@ -7,6 +7,7 @@ use std::num::TryFromIntError;
 
 //type alias because there are the *same*
 pub type RGBA8Hex = u32;
+//TODO : conversion to/from for what is convenient, but NOT ambiguous !
 
 // Newtype allowing for trait definitions
 /// RGB8 : RGB encoded with 8bit per component

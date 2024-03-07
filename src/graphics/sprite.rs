@@ -4,6 +4,7 @@ use macroquad::math::IVec2;
 use macroquad::prelude::{draw_rectangle, draw_texture, Color, Image, Texture2D, UVec2};
 use std::ops::AddAssign;
 
+use crate::graphics::Viewable;
 use delegate::delegate;
 
 #[derive(Default)]
@@ -35,9 +36,11 @@ impl Sprite {
     }
 
     pub(crate) fn from_image(image: &Image) -> Self {
+        let texture = Texture2D::from_image(image);
+
         Self {
             dimensions: UVec2::new(image.width() as u32, image.height() as u32),
-            texture: Some(Texture2D::from_image(&image)),
+            texture: Some(texture),
             ..Self::default()
         }
     }
@@ -67,7 +70,7 @@ impl Drawable for Sprite {
 impl Updatable for Sprite {
     fn update(&mut self, image: &Image) {
         if self.texture.is_none() {
-            //we do not modify dimensions : intended.
+            //we intentionally do not modify dimensions
             self.texture = Some(Texture2D::from_image(&image));
         } else {
             self.texture.as_mut().unwrap().update(image);

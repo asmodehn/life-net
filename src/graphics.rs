@@ -5,6 +5,8 @@ use macroquad::prelude::{
     clear_background, draw_texture, get_fps, get_frame_time, next_frame, Color, Image, Texture2D,
 };
 use macroquad::ui;
+use std::cell::RefCell;
+use std::ops::Deref;
 use std::time::Duration;
 
 // mod ui;
@@ -20,7 +22,7 @@ pub(crate) mod view;
 const DEFAULT_BACKGROUND: Color = RED;
 
 pub trait Viewable {
-    fn render(&self) -> &Image;
+    fn render(&self) -> &RefCell<Image>;
 }
 
 pub fn last_frame_time() -> Duration {
@@ -38,7 +40,7 @@ pub(crate) fn target_frame_time(target_fps: f32) -> Duration {
 }
 
 pub(crate) fn update(d: &mut impl Updatable, v: &impl Viewable) {
-    d.update(v.render());
+    d.update(v.render().borrow().deref());
 }
 
 //Note : top caller for draw => Same API as Drawable !

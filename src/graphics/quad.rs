@@ -2,6 +2,7 @@
 // //Note : A sprite has multiple textures, for animation....
 //
 // use macroquad::math::IVec2;
+use crate::graphics::Viewable;
 use macroquad::prelude::{draw_texture, Color, IVec2, IVec3, Image, UVec2};
 
 pub(crate) trait Drawable {

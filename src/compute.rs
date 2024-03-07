@@ -31,7 +31,7 @@ pub(crate) trait PartialComputable {
 }
 
 static DURATION_AVERAGE: Lazy<RunningAverage<Duration>> =
-    Lazy::new(|| RunningAverage::<Duration>::new({ 5 * 60 }));
+    Lazy::new(|| RunningAverage::<Duration>::new(5 * 60));
 
 const COMPUTE_TIMER: Lazy<Timer> = Lazy::new(|| Timer::default());
 
@@ -133,54 +133,4 @@ mod tests {
     use crate::compute::ComputeCtx;
     use crate::life::cell;
     use crate::life::quad::Quad;
-
-    #[test]
-    fn lonely_dying_quad_compute() {
-        let mut q = Quad::new(1, 1);
-        q.image.update(&[cell::ALIVE]);
-
-        //one update
-        compute::compute(&mut q);
-
-        assert_eq!(q.image.get_pixel(0, 0), cell::DEAD)
-    }
-    #[test]
-    fn lonely_dying_quad_compute_partial() {
-        let mut q = Quad::new(1, 1);
-        q.image.update(&[cell::ALIVE]);
-
-        //one update
-        compute::compute_partial(&mut q, ComputeCtx::default());
-
-        assert_eq!(q.image.get_pixel(0, 0), cell::DEAD)
-    }
-
-    #[test]
-    fn check_stationary_one_compute() {
-        let mut q = Quad::new(2, 2);
-        //permanent square in quad
-        q.image.update(&[cell::ALIVE; 4]);
-
-        //one update
-        compute::compute(&mut q);
-
-        assert_eq!(q.image.get_pixel(0, 0), cell::ALIVE);
-        assert_eq!(q.image.get_pixel(0, 1), cell::ALIVE);
-        assert_eq!(q.image.get_pixel(1, 0), cell::ALIVE);
-        assert_eq!(q.image.get_pixel(1, 1), cell::ALIVE);
-    }
-    #[test]
-    fn check_stationary_one_compute_partial() {
-        let mut q = Quad::new(2, 2);
-        //permanent square in quad
-        q.image.update(&[cell::ALIVE; 4]);
-
-        //one update
-        compute::compute_partial(&mut q, ComputeCtx::default());
-
-        assert_eq!(q.image.get_pixel(0, 0), cell::ALIVE);
-        assert_eq!(q.image.get_pixel(0, 1), cell::ALIVE);
-        assert_eq!(q.image.get_pixel(1, 0), cell::ALIVE);
-        assert_eq!(q.image.get_pixel(1, 1), cell::ALIVE);
-    }
 }

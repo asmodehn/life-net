@@ -13,3 +13,4 @@ unique_id = "0.1.5"
 delegate = "0.12.0"
 ringbuf = "0.3.3"
 once_cell = { version = "1.19.0", features = [] }
+grid = "0.13.0"

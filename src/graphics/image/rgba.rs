@@ -21,7 +21,7 @@ impl Image<u8, 4> for RGBAImage {
     }
 
     fn generate(width: u16, height: u16, pixel: Self::P) -> Self {
-        let mut bytes: Vec<Self::P> = vec![pixel; width as usize * height as usize];
+        let bytes: Vec<Self::P> = vec![pixel; width as usize * height as usize];
         Self {
             width,
             height,

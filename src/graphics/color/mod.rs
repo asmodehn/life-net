@@ -26,12 +26,12 @@ impl const Channel for Monochrome {
     }
 }
 
-pub(crate) trait Pixel<C: Channel, const components: u8>:
+pub(crate) trait Pixel<C: Channel, const COMPONENTS: u8>:
     Default + Copy + PartialEq
 {
     /// bits per pixel
     fn bpp() -> u32 {
-        C::bpc() * components as u32
+        C::bpc() * COMPONENTS as u32
     }
 
     // fn as_array(self) -> [C; components as usize]
