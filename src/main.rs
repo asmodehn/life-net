@@ -27,7 +27,7 @@ fn window_conf() -> Conf {
     }
 }
 
-const PARTIAL_UPDATE: bool = true;
+const PARTIAL_UPDATE: bool = false;
 
 #[macroquad::main(window_conf)]
 async fn main() {
@@ -51,8 +51,9 @@ async fn main() {
     let mut lifequad = life::quad::Quad::gen(cell::State::Dead, w, h).with_random_cells();
     let mut sprite = Sprite::from_image(lifequad.render().borrow().deref());
 
-    let mut compute_context =
-        ComputeCtx::default().with_constraint(Duration::from_secs_f32(1. / 60.));
+    let mut compute_context: ComputeCtx<life::quad::Quad> =
+        ComputeCtx::<life::quad::Quad>::default()
+            .with_constraint(Duration::from_secs_f32(1. / 60.));
 
     loop {
         let available_sim_duration =
@@ -67,8 +68,8 @@ async fn main() {
 
         if PARTIAL_UPDATE {
             //PARTIAL UPDATE
-            compute_context.set_constraint(available_sim_duration);
-            compute_context = compute::compute_partial(&mut lifequad, compute_context);
+            // compute_context.set_constraint(available_sim_duration);
+            // compute_context = compute::compute_partial(&mut lifequad, compute_context);
         } else {
             //FULL UPDATE
             compute::compute(&mut lifequad);

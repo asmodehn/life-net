@@ -1,6 +1,7 @@
 use crate::compute::running_average::RunningAverage;
 use crate::compute::timer::Timer;
 use crate::graphics::quad::Drawable;
+use crate::life::cell;
 use once_cell::sync::Lazy;
 use std::time::Duration;
 
@@ -25,9 +26,19 @@ pub(crate) trait Computable {
 }
 
 pub(crate) trait PartialComputable {
-    fn compute_partial(&mut self, elapsed: Duration, until: impl Fn() -> bool);
+    type Idx;
+    type El;
 
-    fn update_completed(&self) -> bool; // TODO some kind of progress measurement ?
+    fn compute_partial<'p, 'c, Remaining>(
+        &'c mut self,
+        elapsed: Duration,
+        until: impl Fn() -> bool,
+        progress: Option<Remaining>,
+    ) -> Option<Remaining>
+    where
+        Remaining: Iterator<Item = (Self::Idx, &'p Self::El)>;
+
+    fn update_completed(&self) -> bool;
 }
 
 static DURATION_AVERAGE: Lazy<RunningAverage<Duration>> =
@@ -45,15 +56,16 @@ where
     computable.compute(elapsed);
 }
 
-pub(crate) struct ComputeCtx {
+pub(crate) struct ComputeCtx<'s, PC: PartialComputable> {
     // compute_timer: Timer,
     // average_duration: RunningAverage<Duration>,
     pub last_elapsed: Duration,
     constraint: Option<Duration>,
     inner_timer: Timer,
+    cont: Option<Box<dyn Iterator<Item = (PC::Idx, PC::El)>>>,
 }
 
-impl Default for ComputeCtx {
+impl<'s, PC: PartialComputable> Default for ComputeCtx<'s, PC> {
     fn default() -> Self {
         Self {
             // compute_timer: Timer::default(),
@@ -61,11 +73,12 @@ impl Default for ComputeCtx {
             last_elapsed: Duration::MAX,
             constraint: None,
             inner_timer: Timer::default(),
+            cont: None::<Box<dyn Iterator<Item = (PC::Idx, PC::El)>>>,
         }
     }
 }
 
-impl ComputeCtx {
+impl<PC: PartialComputable> ComputeCtx<'_, PC> {
     pub(crate) fn with_constraint(self, duration: Duration) -> Self {
         Self {
             constraint: Some(duration),
@@ -109,7 +122,10 @@ impl ComputeCtx {
     }
 }
 
-pub(crate) fn compute_partial<PC>(computable: &mut PC, mut ctx: ComputeCtx) -> ComputeCtx
+pub(crate) fn compute_partial<'s, PC>(
+    computable: &mut PC,
+    mut ctx: ComputeCtx<'s, PC>,
+) -> ComputeCtx<'s, PC>
 where
     PC: PartialComputable,
 {
@@ -122,15 +138,17 @@ where
     }
 
     // Note last_elapsed is the update timer
-    computable.compute_partial(ctx.last_elapsed, ctx.until_closure());
+    let remaining = computable.compute_partial(ctx.last_elapsed, ctx.until_closure(), ctx.cont);
+
+    ctx.cont = remaining;
 
     ctx
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::compute;
-    use crate::compute::ComputeCtx;
-    use crate::life::cell;
-    use crate::life::quad::Quad;
+    // use crate::compute;
+    // use crate::compute::ComputeCtx;
+    // use crate::life::cell;
+    // use crate::life::quad::Quad;
 }
