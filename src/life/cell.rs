@@ -1,5 +1,4 @@
 use crate::life::cell::State::{Alive, Dead};
-use crate::life::world::usize_from_i32;
 use grid::Grid;
 use macroquad::color; // TODO : replace with our color modules...
 
@@ -12,6 +11,7 @@ pub enum State {
 pub const ALIVE: color::Color = color::BLACK;
 pub const DEAD: color::Color = color::WHITE;
 
+#[allow(unused)]
 pub(crate) fn state(color: &[u8; 4]) -> State {
     if <color::Color as Into<[u8; 4]>>::into(ALIVE) == *color {
         Alive

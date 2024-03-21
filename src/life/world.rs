@@ -1,31 +1,31 @@
-use crate::graphics::Viewable;
-use crate::life::cell;
-use crate::life::quad::Quad;
-use grid::Grid;
-use macroquad::color::WHITE;
-use macroquad::prelude::Image;
-use std::time::Duration;
+// use crate::graphics::Viewable;
+// use crate::life::cell;
+// use crate::life::quad::Quad;
+// use grid::Grid;
+// use macroquad::color::WHITE;
+// use macroquad::prelude::Image;
+// use std::time::Duration;
 
-pub(crate) fn usize_from_i32(v: i32) -> usize {
-    usize::try_from(v).unwrap()
-}
+// pub(crate) fn usize_from_i32(v: i32) -> usize {
+//     usize::try_from(v).unwrap()
+// }
 
-pub(crate) fn u16_from_usize(v: usize) -> u16 {
-    u16::try_from(v).unwrap()
-}
-pub(crate) fn usize_from_u16(v: u16) -> usize {
-    usize::try_from(v).unwrap()
-}
+// pub(crate) fn u16_from_usize(v: usize) -> u16 {
+//     u16::try_from(v).unwrap()
+// }
+// pub(crate) fn usize_from_u16(v: u16) -> usize {
+//     usize::try_from(v).unwrap()
+// }
 
 //TODO : a grid of quads (u16 * u16), modifiable as a single image ...
 
-pub struct World {
-    pub width: usize,
-    pub height: usize,
-    pub cells: Grid<Quad>,
-    pub buffer: Grid<Quad>,
-    // pub scene: View, // TODO : scene graph to hold multiple images with relative positions...
-}
+// pub struct World {
+//     pub width: usize,
+//     pub height: usize,
+//     pub cells: Grid<Quad>,
+//     pub buffer: Grid<Quad>,
+//     // pub scene: View, // TODO : scene graph to hold multiple images with relative positions...
+// }
 
 // impl World {
 //     //size of your world depend on your platform

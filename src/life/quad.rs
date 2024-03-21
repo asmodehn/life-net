@@ -1,21 +1,16 @@
 use crate::compute::{Computable, PartialComputable};
 use crate::graphics::Viewable;
 use crate::life::cell;
-use crate::life::cell::{State, ALIVE, DEAD};
-use grid::{grid, Grid};
+use grid::Grid;
 use itertools::iproduct;
 use macroquad::color::Color;
-use macroquad::prelude::collections::storage::get_mut;
 use macroquad::prelude::Image;
 use macroquad::rand::ChooseRandom;
-use std::cell::{Cell, RefCell};
-use std::ops::{Deref, DerefMut};
+use std::cell::RefCell;
+use std::ops::DerefMut;
 use std::time::Duration;
 
 struct QuadUpdate {
-    width: usize,
-    height: usize,
-    //TODO : try grid crate here ??
     original: Grid<cell::State>,
     left_over: Vec<(usize, usize)>,
 }
@@ -29,15 +24,33 @@ impl QuadUpdate {
         left_over.shuffle();
 
         Self {
-            width: cells.cols(),
-            height: cells.rows(),
             original,
             left_over,
         }
     }
 
     //TODO : pass iterator as parameter here...
-    fn step(&mut self) -> Option<(usize, usize, Option<cell::State>)> {
+    // fn step(&mut self) -> Option<(usize, usize, Option<cell::State>)> {
+    //     match self.left_over.pop() {
+    //         None => None,
+    //         Some((y, x)) => {
+    //             let updated = cell::update(&self.original, x as i32, y as i32);
+    //             // println!("{:?} => {:?}", self.original[y as usize *self.width as usize+ x as usize], updated);
+    //             Some((x, y, updated))
+    //         } //CAREFUL : grid computation here must be exactly same as image...
+    //     }
+    // }
+    // Note : This is an iterator. TODO : replace by an usual iterator implementation... (after grid replacement)
+
+    fn completed(&self) -> bool {
+        self.left_over.is_empty()
+    }
+}
+
+impl Iterator for QuadUpdate {
+    type Item = (usize, usize, Option<cell::State>);
+
+    fn next(&mut self) -> Option<Self::Item> {
         match self.left_over.pop() {
             None => None,
             Some((y, x)) => {
@@ -47,14 +60,9 @@ impl QuadUpdate {
             } //CAREFUL : grid computation here must be exactly same as image...
         }
     }
-    // Note : This is an iterator. TODO : replace by an usual iterator implementation... (after grid replacement)
-
-    fn completed(&self) -> bool {
-        self.left_over.is_empty()
-    }
 }
 
-fn to_colors(state: &Grid<State>) -> Vec<Color> {
+fn to_colors(state: &Grid<cell::State>) -> Vec<Color> {
     state.iter().map(|p| cell::color(*p)).collect()
 }
 
@@ -66,13 +74,13 @@ pub struct Quad {
 }
 
 impl Quad {
-    pub fn new(state_grid: Grid<State>) -> Self {
+    pub fn new(state_grid: Grid<cell::State>) -> Self {
         let update = QuadUpdate::new(&state_grid);
 
         let mut img = Image::gen_image_color(
             state_grid.cols() as u16,
             state_grid.rows() as u16,
-            cell::color(State::Dead),
+            cell::color(cell::State::Dead),
         );
         img.update(to_colors(&state_grid).as_slice());
 
@@ -92,7 +100,7 @@ impl Quad {
         self.progress.rows()
     }
 
-    pub fn gen(state: State, width: u16, height: u16) -> Self {
+    pub fn gen(state: cell::State, width: u16, height: u16) -> Self {
         let progress: Grid<cell::State> = Grid::init(width as usize, height as usize, state);
 
         Self::new(progress)
@@ -100,13 +108,14 @@ impl Quad {
 
     pub(crate) fn with_random_cells(self) -> Self {
         //TODO : generator as parameter
-        let mut progress: Grid<cell::State> = Grid::init(self.width(), self.height(), State::Dead);
+        let mut progress: Grid<cell::State> =
+            Grid::init(self.width(), self.height(), cell::State::Dead);
 
         for s in progress.iter_mut() {
             if macroquad::prelude::rand::gen_range(0, 5) == 0 {
-                *s = State::Alive
+                *s = cell::State::Alive
             } else {
-                *s = State::Dead
+                *s = cell::State::Dead
             }
         }
 
@@ -119,12 +128,12 @@ impl Quad {
         }
     }
 
-    fn with_updated_cb(self, cb: fn(&mut Self)) -> Self {
-        Self {
-            updated_cb: cb,
-            ..self
-        }
-    }
+    // fn with_updated_cb(self, cb: fn(&mut Self)) -> Self {
+    //     Self {
+    //         updated_cb: cb,
+    //         ..self
+    //     }
+    // }
 
     fn reset_update(&mut self) {
         self.update = Some(QuadUpdate::new(&self.progress));
@@ -147,7 +156,7 @@ impl PartialComputable for Quad {
             }
 
             //attempt an update step
-            match self.update.as_mut().unwrap().step() {
+            match self.update.as_mut().unwrap().next() {
                 None => {}
                 Some((_, _, None)) => {}
                 Some((x, y, Some(cell_state))) => {
@@ -183,7 +192,7 @@ impl Computable for Quad {
             }
 
             //attempt an update step
-            match self.update.as_mut().unwrap().step() {
+            match self.update.as_mut().unwrap().next() {
                 None => {}
                 Some((_, _, None)) => {}
                 Some((x, y, Some(cell_state))) => {
