@@ -8,7 +8,7 @@ mod compute;
 mod graphics;
 mod life;
 
-use crate::compute::ComputeCtx;
+use crate::compute::{compute_reset, ComputeCtx};
 use crate::graphics::sprite::Sprite;
 use crate::graphics::Viewable;
 use crate::life::cell;
@@ -54,6 +54,12 @@ async fn main() {
     let mut compute_context =
         ComputeCtx::default().with_constraint(Duration::from_secs_f32(1. / 60.));
 
+    let mut quad_upd_opt = if PARTIAL_UPDATE {
+        Some(compute::compute_reset(&lifequad))
+    } else {
+        None
+    };
+
     loop {
         let available_sim_duration =
             graphics::target_frame_time(60.0).saturating_sub(graphics::last_frame_time());
@@ -68,7 +74,8 @@ async fn main() {
         if PARTIAL_UPDATE {
             //PARTIAL UPDATE
             compute_context.set_constraint(available_sim_duration);
-            compute_context = compute::compute_partial(&mut lifequad, compute_context);
+
+            compute::compute_partial(&mut lifequad, &mut compute_context, &mut quad_upd_opt);
         } else {
             //FULL UPDATE
             compute::compute(&mut lifequad);

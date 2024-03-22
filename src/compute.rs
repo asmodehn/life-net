@@ -1,8 +1,13 @@
 use crate::compute::running_average::RunningAverage;
 use crate::compute::timer::Timer;
 use crate::graphics::quad::Drawable;
+use crate::life::cell;
+use crate::life::quad::QuadUpdate;
 use once_cell::sync::Lazy;
+use std::iter::Peekable;
+use std::ops::Deref;
 use std::time::Duration;
+use test::RunIgnored::No;
 
 pub(crate) mod rate_limiter;
 pub(crate) mod running_average;
@@ -25,8 +30,20 @@ pub(crate) trait Computable {
 }
 
 pub(crate) trait PartialComputable {
-    fn compute_partial(&mut self, elapsed: Duration, until: impl Fn() -> bool);
+    type Step;
 
+    type Stepper: Iterator;
+
+    fn compute_reset(&self) -> Peekable<Self::Stepper>;
+
+    fn compute_partial(
+        &mut self,
+        elapsed: Duration,
+        until: impl Fn() -> bool,
+        remainder: &mut Peekable<Self::Stepper>,
+    );
+
+    //TODO : this will become unnecessary
     fn update_completed(&self) -> bool; // TODO some kind of progress measurement ?
 }
 
@@ -100,7 +117,7 @@ impl ComputeCtx {
         let this_constraint = self.constraint;
         let this_inner_timer = &self.inner_timer;
 
-        move || -> bool { this_constraint.is_some_and(|d| d <= this_inner_timer.elapsed()) }
+        move || -> bool { this_constraint.is_some_and(move |d| d <= this_inner_timer.elapsed()) }
 
         // move |_pc: &PC| {
         //     //return bool to decide to stop or not (because of one compute constraint, or global update per second limit)
@@ -109,28 +126,72 @@ impl ComputeCtx {
     }
 }
 
-pub(crate) fn compute_partial<PC>(computable: &mut PC, mut ctx: ComputeCtx) -> ComputeCtx
+pub(crate) fn compute_reset<PC>(computable: &PC) -> Peekable<PC::Stepper>
 where
+    PC: PartialComputable,
+{
+    computable.compute_reset()
+}
+
+//TODO : make compute code similar somehow...
+pub(crate) fn compute_partial<PC>(
+    computable: &mut PC,
+    ctx: &mut ComputeCtx,
+    stepper: &mut Option<Peekable<PC::Stepper>>,
+) where
     PC: PartialComputable,
 {
     ctx.reset_timer();
 
+    //TODO : merge these ifs !
     if computable.update_completed() {
         let elapsed = COMPUTE_TIMER.elapsed_and_reset();
         DURATION_AVERAGE.record(elapsed);
         ctx.last_elapsed = elapsed;
     }
 
-    // Note last_elapsed is the update timer
-    computable.compute_partial(ctx.last_elapsed, ctx.until_closure());
+    if stepper.is_none() || stepper.as_mut().is_some_and(|mut s| s.peek().is_none()) {
+        // println!("RESET !");
+        *stepper = Some(computable.compute_reset());
+    }
 
-    ctx
+    // Note last_elapsed is the update timer
+    computable.compute_partial(
+        ctx.last_elapsed,
+        ctx.until_closure(),
+        stepper.as_mut().unwrap(),
+    );
 }
 
 #[cfg(test)]
 mod tests {
     use crate::compute;
-    use crate::compute::ComputeCtx;
+    use crate::compute::{ComputeCtx, PartialComputable};
     use crate::life::cell;
     use crate::life::quad::Quad;
+    use std::iter::Peekable;
+    use std::time::Duration;
+
+    // struct PartialCounter((u16, u16)); // or range ??
+    //
+    // impl PartialComputable for PartialCounter{
+    //     type Step = ();
+    //     type Stepper = ();
+    //
+    //     fn compute_reset(&self) -> Peekable<Self::Stepper> {
+    //         todo!()
+    //     }
+    //
+    //     fn compute_partial(&mut self, elapsed: Duration, until: impl Fn() -> bool, remainder: &mut Peekable<Self::Stepper>) {
+    //         todo!()
+    //     }
+    //
+    //     fn update_completed(&self) -> bool {
+    //         todo!()
+    //     }
+    // }
+
+    //TODO : test that ensures actual progress on partial compute
+
+    //TODO : test that ensure compute actually update stuff (for both cases)
 }
