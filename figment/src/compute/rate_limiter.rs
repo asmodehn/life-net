@@ -1,5 +1,4 @@
 use crate::compute::running_average::RunningAverage;
-use crate::life::quad::Quad;
 use std::cmp::min;
 use std::time::{Duration, Instant};
 
@@ -41,11 +40,11 @@ impl RateLimiter {
         self.max_duration.and_then(|md| Some(min(constraint, md)))
     }
 
-    pub fn as_until_closure(&self) -> impl Fn(&Quad) -> bool {
+    pub fn as_until_closure(&self) -> impl Fn() -> bool {
         let compute_timer = Instant::now();
         let max_duration = self.max_duration;
 
-        move |_quad: &Quad| {
+        move || {
             //return bool to decide to stop or not (because of max_duration constraint)
             max_duration.is_some_and(|d| d <= compute_timer.elapsed())
         }

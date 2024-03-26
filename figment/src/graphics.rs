@@ -15,7 +15,7 @@ mod color;
 mod image;
 pub(crate) mod quad;
 mod rect;
-pub(crate) mod sprite;
+pub mod sprite;
 mod texture;
 pub(crate) mod view;
 
@@ -35,16 +35,16 @@ pub fn current_fps() -> i32 {
     //TODO : average these over time... in update ? only when used ?
 }
 
-pub(crate) fn target_frame_time(target_fps: f32) -> Duration {
+pub fn target_frame_time(target_fps: f32) -> Duration {
     Duration::from_secs_f32(1. / target_fps)
 }
 
-pub(crate) fn update(d: &mut impl Updatable, v: &impl Viewable) {
+pub fn update(d: &mut impl Updatable, v: &impl Viewable) {
     d.update(v.render().borrow().deref());
 }
 
 //Note : top caller for draw => Same API as Drawable !
-pub(crate) async fn render(d: &impl Drawable, pos: IVec2) {
+pub async fn render(d: &impl Drawable, pos: IVec2) {
     //
     // pub(crate) async fn update(&mut self, viewable: &mut impl Drawable) {
     clear_background(DEFAULT_BACKGROUND);

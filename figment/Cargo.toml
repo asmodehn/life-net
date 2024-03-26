@@ -1,0 +1,14 @@
+[package]
+name = "figment"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+macroquad = "0.4"
+rand = "0.8.5"
+itertools = { version = "0.12.1", features = [] }
+unique_id = "0.1.5"
+delegate = "0.12.0"
+ringbuf = "0.3.3"
+once_cell = { version = "1.19.0", features = [] }
+grid = "0.13.0"

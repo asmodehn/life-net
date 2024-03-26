@@ -121,6 +121,7 @@ impl TryFrom<Vec3> for RGB32 {
 
 #[cfg(test)]
 mod tests {
+    use test;
     use crate::graphics::color::monochrome::Monochrome;
     use crate::graphics::color::rgb::{RGB32, RGB8};
     use macroquad::math::UVec3;

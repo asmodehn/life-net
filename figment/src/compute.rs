@@ -1,13 +1,10 @@
 use crate::compute::running_average::RunningAverage;
 use crate::compute::timer::Timer;
 use crate::graphics::quad::Drawable;
-use crate::life::cell;
-use crate::life::quad::QuadUpdate;
 use once_cell::sync::Lazy;
 use std::iter::Peekable;
 use std::ops::Deref;
 use std::time::Duration;
-use test::RunIgnored::No;
 
 pub(crate) mod rate_limiter;
 pub(crate) mod running_average;
@@ -25,11 +22,11 @@ fn get_updates_per_second() -> Option<f32> {
         .and_then(|d: Duration| Some(1. / d.as_secs_f32()))
 }
 
-pub(crate) trait Computable {
+pub trait Computable {
     fn compute(&mut self, elapsed: Duration);
 }
 
-pub(crate) trait PartialComputable {
+pub trait PartialComputable {
     type Step;
 
     type Stepper: Iterator;
@@ -52,7 +49,7 @@ static DURATION_AVERAGE: Lazy<RunningAverage<Duration>> =
 
 const COMPUTE_TIMER: Lazy<Timer> = Lazy::new(|| Timer::default());
 
-pub(crate) fn compute<C>(computable: &mut C)
+pub fn compute<C>(computable: &mut C)
 where
     C: Computable,
 {
@@ -62,7 +59,7 @@ where
     computable.compute(elapsed);
 }
 
-pub(crate) struct ComputeCtx {
+pub struct ComputeCtx {
     // compute_timer: Timer,
     // average_duration: RunningAverage<Duration>,
     pub last_elapsed: Duration,
@@ -83,14 +80,14 @@ impl Default for ComputeCtx {
 }
 
 impl ComputeCtx {
-    pub(crate) fn with_constraint(self, duration: Duration) -> Self {
+    pub fn with_constraint(self, duration: Duration) -> Self {
         Self {
             constraint: Some(duration),
             ..self
         }
     }
 
-    pub(crate) fn set_constraint(&mut self, duration: Duration) {
+    pub fn set_constraint(&mut self, duration: Duration) {
         self.constraint = Some(duration);
     }
 
@@ -126,7 +123,7 @@ impl ComputeCtx {
     }
 }
 
-pub(crate) fn compute_reset<PC>(computable: &PC) -> Peekable<PC::Stepper>
+pub fn compute_reset<PC>(computable: &PC) -> Peekable<PC::Stepper>
 where
     PC: PartialComputable,
 {
@@ -134,7 +131,7 @@ where
 }
 
 //TODO : make compute code similar somehow...
-pub(crate) fn compute_partial<PC>(
+pub fn compute_partial<PC>(
     computable: &mut PC,
     ctx: &mut ComputeCtx,
     stepper: &mut Option<Peekable<PC::Stepper>>,
@@ -171,8 +168,6 @@ mod tests {
 
     use crate::compute;
     use crate::compute::{ComputeCtx, PartialComputable};
-    use crate::life::cell;
-    use crate::life::quad::Quad;
     use itertools::Itertools;
     use std::iter::{zip, Peekable};
     use std::ops::Range;

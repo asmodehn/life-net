@@ -1,4 +1,4 @@
-use crate::life::cell::State::{Alive, Dead};
+use crate::cell::State::{Alive, Dead};
 use grid::Grid;
 use macroquad::color; // TODO : replace with our color modules...
 
@@ -75,12 +75,12 @@ pub fn update(cells: &Grid<State>, x: i32, y: i32) -> Option<State> {
 
 #[cfg(test)]
 mod tests {
-    use crate::life::cell;
-    use crate::life::cell::color;
+    use crate::cell;
+    use crate::cell::color;
     use grid::{grid, Grid};
     use test::Bencher;
 
-    use crate::life::cell::State::{Alive, Dead};
+    use crate::cell::State::{Alive, Dead};
     use cell::{ALIVE, DEAD};
 
     #[test]

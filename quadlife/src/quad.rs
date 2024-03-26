@@ -1,6 +1,6 @@
-use crate::compute::{Computable, PartialComputable};
-use crate::graphics::Viewable;
-use crate::life::cell;
+use figment::compute::{Computable, PartialComputable};
+use figment::graphics::Viewable;
+use crate::cell;
 use grid::Grid;
 use itertools::iproduct;
 use macroquad::color::Color;
@@ -95,7 +95,7 @@ impl Quad {
         Self::new(progress)
     }
 
-    pub(crate) fn with_random_cells(self) -> Self {
+    pub fn with_random_cells(self) -> Self {
         //TODO : generator as parameter
         let mut progress: Grid<cell::State> =
             Grid::init(self.width(), self.height(), cell::State::Dead);
@@ -210,12 +210,12 @@ impl Viewable for Quad {
 
 #[cfg(test)]
 mod tests {
-    use crate::life::cell;
-    use crate::life::cell::{State, ALIVE, DEAD};
-    use crate::life::quad::Quad;
+    use crate::cell;
+    use crate::cell::{State, ALIVE, DEAD};
+    use crate::quad::Quad;
     use std::time::Duration;
 
-    use crate::compute::{Computable, PartialComputable};
+    use figment::compute::{Computable, PartialComputable};
 
     use grid::grid;
     use test::Bencher;

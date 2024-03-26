@@ -1,17 +1,12 @@
 #![feature(test)]
 #![feature(slice_pattern)]
-#![feature(const_trait_impl)]
 extern crate core;
 extern crate test;
 
-mod compute;
-mod graphics;
-mod life;
-
-use crate::compute::{compute_reset, ComputeCtx};
-use crate::graphics::sprite::Sprite;
-use crate::graphics::Viewable;
-use crate::life::cell;
+use figment::compute;
+use figment::graphics;
+use figment::graphics::Viewable; // needed for render method...
+use quadlife::cell;
 use macroquad::prelude::*;
 use std::ops::Deref;
 use std::time::Duration;
@@ -48,11 +43,11 @@ async fn main() {
 
     // TODO : scene, for all relative positioning...
 
-    let mut lifequad = life::quad::Quad::gen(cell::State::Dead, w, h).with_random_cells();
-    let mut sprite = Sprite::from_image(lifequad.render().borrow().deref());
+    let mut lifequad = quadlife::quad::Quad::gen(cell::State::Dead, w, h).with_random_cells();
+    let mut sprite = graphics::sprite::Sprite::from_image(lifequad.render().borrow().deref());
 
     let mut compute_context =
-        ComputeCtx::default().with_constraint(Duration::from_secs_f32(1. / 60.));
+        compute::ComputeCtx::default().with_constraint(Duration::from_secs_f32(1. / 60.));
 
     let mut quad_upd_opt = if PARTIAL_UPDATE {
         Some(compute::compute_reset(&lifequad))

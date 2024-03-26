@@ -8,7 +8,7 @@ use crate::graphics::Viewable;
 use delegate::delegate;
 
 #[derive(Default)]
-pub(crate) struct Sprite {
+pub struct Sprite {
     color: Color,
     dimensions: UVec2,
     texture: Option<Texture2D>,
@@ -35,7 +35,7 @@ impl Sprite {
         }
     }
 
-    pub(crate) fn from_image(image: &Image) -> Self {
+    pub fn from_image(image: &Image) -> Self {
         let texture = Texture2D::from_image(image);
 
         Self {
