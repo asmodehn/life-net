@@ -1,5 +1,4 @@
-use crate::graphics::color::{RGB8, RGBA8};
-use crate::graphics::image::rgb::RGBImage;
+use crate::graphics::color::RGBA8;
 use crate::graphics::image::Image;
 use macroquad::math::Rect;
 

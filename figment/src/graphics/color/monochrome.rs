@@ -1,6 +1,6 @@
 use once_cell::sync::Lazy;
 use std::fmt::Debug;
-use std::ops::{RangeBounds, RangeInclusive};
+use std::ops::RangeInclusive;
 
 /// A type alias, because these are exactly the same (including possible value range).
 pub type ColorByte = u8;
@@ -83,7 +83,6 @@ impl From<Monochrome> for ColorByte {
 #[cfg(test)]
 mod tests {
     use crate::graphics::color::monochrome::{ColorByte, Monochrome};
-    use test::Bencher;
 
     #[test]
     fn check_monochrome_from_u8() {

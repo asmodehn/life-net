@@ -1,11 +1,9 @@
 use crate::graphics::quad::{Drawable, Placed, Quad, Updatable};
+use delegate::delegate;
 use macroquad::color::YELLOW;
 use macroquad::math::IVec2;
 use macroquad::prelude::{draw_rectangle, draw_texture, Color, Image, Texture2D, UVec2};
 use std::ops::AddAssign;
-
-use crate::graphics::Viewable;
-use delegate::delegate;
 
 #[derive(Default)]
 pub struct Sprite {

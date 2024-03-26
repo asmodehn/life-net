@@ -1,5 +1,3 @@
-use crate::compute::Computable;
-
 pub(crate) mod monochrome;
 pub use monochrome::{ColorByte, Monochrome};
 
@@ -76,8 +74,7 @@ impl Pixel<Monochrome, 4> for RGBA32 {
 
 #[cfg(test)]
 mod tests {
-    use test::Bencher;
 
-    #[test]
-    fn check_gray_u8_from_u8() {}
+    // #[test]
+    // fn check_gray_u8_from_u8() {}
 }

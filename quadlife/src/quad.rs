@@ -1,15 +1,14 @@
+use crate::cell;
 use figment::compute::{Computable, PartialComputable};
 use figment::graphics::Viewable;
-use crate::cell;
 use grid::Grid;
 use itertools::iproduct;
 use macroquad::color::Color;
 use macroquad::prelude::Image;
 use macroquad::rand::ChooseRandom;
-use std::any::Any;
 use std::cell::RefCell;
-use std::iter::{Cycle, Peekable};
-use std::ops::{Deref, DerefMut};
+use std::iter::Peekable;
+use std::ops::DerefMut;
 use std::time::Duration;
 
 pub struct QuadUpdate {

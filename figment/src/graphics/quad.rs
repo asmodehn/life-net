@@ -1,15 +1,10 @@
-// //immediate mode quad (with or without txture)
-// //Note : A sprite has multiple textures, for animation....
-//
-// use macroquad::math::IVec2;
-use crate::graphics::Viewable;
-use macroquad::prelude::{draw_texture, Color, IVec2, IVec3, Image, UVec2};
+use macroquad::prelude::{Color, IVec2, Image, UVec2};
 
-pub(crate) trait Drawable {
+pub trait Drawable {
     fn draw(&self, position_in_screen: IVec2);
 }
 
-pub(crate) trait Updatable {
+pub trait Updatable {
     fn update(&mut self, image: &Image);
 }
 

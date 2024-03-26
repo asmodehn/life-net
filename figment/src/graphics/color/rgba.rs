@@ -156,11 +156,9 @@ impl TryFrom<Vec4> for RGBA32 {
 #[cfg(test)]
 mod tests {
     use crate::graphics::color::monochrome::Monochrome;
-    use crate::graphics::color::rgb::RGB32;
     use crate::graphics::color::rgba::{RGBA32, RGBA8};
     use macroquad::math::UVec4;
     use macroquad::prelude::Vec4;
-    use test::Bencher;
 
     //From & Into Array
 

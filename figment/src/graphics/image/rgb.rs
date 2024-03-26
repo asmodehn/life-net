@@ -1,11 +1,4 @@
-// use core::slice::SlicePattern;
-// use macroquad::color::Color;
-// use macroquad::math::Rect;
-// use macroquad::prelude::Image;
-// pub use crate::graphics::color::rgb::RGB;
-
 use crate::graphics::color::rgb::RGB8;
-use crate::graphics::color::Pixel;
 use crate::graphics::image::Image;
 use macroquad::math::Rect;
 

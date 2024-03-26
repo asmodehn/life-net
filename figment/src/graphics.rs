@@ -1,9 +1,7 @@
 use crate::graphics::quad::{Drawable, Updatable};
-use macroquad::color::{RED, YELLOW};
+use macroquad::color::RED;
 use macroquad::math::IVec2;
-use macroquad::prelude::{
-    clear_background, draw_texture, get_fps, get_frame_time, next_frame, Color, Image, Texture2D,
-};
+use macroquad::prelude::{clear_background, get_fps, get_frame_time, next_frame, Color, Image};
 use macroquad::ui;
 use std::cell::RefCell;
 use std::ops::Deref;

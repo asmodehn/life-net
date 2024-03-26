@@ -1,9 +1,7 @@
 use crate::graphics::sprite::Sprite;
-use macroquad::color::{RED, YELLOW};
+use macroquad::color::RED;
 use macroquad::math::IVec2;
-use macroquad::prelude::{
-    clear_background, draw_texture, get_fps, get_frame_time, next_frame, Image, Texture2D,
-};
+use macroquad::prelude::{clear_background, get_fps, get_frame_time, next_frame};
 use macroquad::ui;
 use std::ops::Deref;
 use std::time::Duration;

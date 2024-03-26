@@ -1,11 +1,5 @@
-use macroquad::math::Rect;
-// use macroquad::color::Color;
-// use macroquad::color_u8;
-// use macroquad::math::Rect;
-// use crate::graphics::color::monochrome::{ColorByte, Monochrome};
-//
-use crate::graphics::image::rgb::RGBImage;
 use crate::graphics::image::Image;
+use macroquad::math::Rect;
 
 pub(crate) struct GrayscaleImage {
     pub bytes: Vec<u8>,

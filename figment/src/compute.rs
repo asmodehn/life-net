@@ -1,9 +1,7 @@
 use crate::compute::running_average::RunningAverage;
 use crate::compute::timer::Timer;
-use crate::graphics::quad::Drawable;
 use once_cell::sync::Lazy;
 use std::iter::Peekable;
-use std::ops::Deref;
 use std::time::Duration;
 
 pub(crate) mod rate_limiter;

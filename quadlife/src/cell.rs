@@ -76,12 +76,8 @@ pub fn update(cells: &Grid<State>, x: i32, y: i32) -> Option<State> {
 #[cfg(test)]
 mod tests {
     use crate::cell;
-    use crate::cell::color;
     use grid::{grid, Grid};
     use test::Bencher;
-
-    use crate::cell::State::{Alive, Dead};
-    use cell::{ALIVE, DEAD};
 
     #[test]
     fn check_rule1() {

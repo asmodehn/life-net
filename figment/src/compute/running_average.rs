@@ -1,4 +1,4 @@
-use ringbuf::ring_buffer::RbRead;
+// use ringbuf::ring_buffer::RbRead;
 use ringbuf::Rb;
 use ringbuf::SharedRb;
 use std::iter::Sum;
@@ -44,7 +44,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use ringbuf::Rb;
+    #![allow(dead_code)]
+    #![allow(unused_variables)]
+    #![allow(unused_imports)]
 
     use crate::compute::running_average::RunningAverage;
     use std::time::Duration;
@@ -59,7 +61,7 @@ mod tests {
 
     #[test]
     fn measurement_inside_window_ok() {
-        let mut da = RunningAverage::<Duration>::new(5);
+        let da = RunningAverage::<Duration>::new(5);
         da.record(Duration::new(1, 0));
         da.record(Duration::new(2, 0));
         da.record(Duration::new(3, 0));
@@ -69,7 +71,7 @@ mod tests {
 
     #[test]
     fn measurement_outside_window_dropped() {
-        let mut da = RunningAverage::<Duration>::new(5);
+        let da = RunningAverage::<Duration>::new(5);
         da.record(Duration::new(1, 0));
         da.record(Duration::new(2, 0));
         da.record(Duration::new(3, 0));
@@ -84,7 +86,7 @@ mod tests {
 
     #[test]
     fn measurement_outside_capacity_dropped() {
-        let mut da = RunningAverage::<Duration>::new(5);
+        let da = RunningAverage::<Duration>::new(5);
         //assert_eq!(da.durations.capacity(), 5); // TODO : shouldnt that be ^2 for speed ??
 
         da.record(Duration::new(1, 0));
