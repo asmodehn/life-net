@@ -165,33 +165,125 @@ pub(crate) fn compute_partial<PC>(
 
 #[cfg(test)]
 mod tests {
+    #![allow(dead_code)]
+    #![allow(unused_variables)]
+    #![allow(unused_imports)]
+
     use crate::compute;
     use crate::compute::{ComputeCtx, PartialComputable};
     use crate::life::cell;
     use crate::life::quad::Quad;
-    use std::iter::Peekable;
+    use itertools::Itertools;
+    use std::iter::{zip, Peekable};
+    use std::ops::Range;
     use std::time::Duration;
 
-    // struct PartialCounter((u16, u16)); // or range ??
-    //
-    // impl PartialComputable for PartialCounter{
-    //     type Step = ();
-    //     type Stepper = ();
-    //
-    //     fn compute_reset(&self) -> Peekable<Self::Stepper> {
-    //         todo!()
-    //     }
-    //
-    //     fn compute_partial(&mut self, elapsed: Duration, until: impl Fn() -> bool, remainder: &mut Peekable<Self::Stepper>) {
-    //         todo!()
-    //     }
-    //
-    //     fn update_completed(&self) -> bool {
-    //         todo!()
-    //     }
-    // }
+    #[derive(Debug, Clone, PartialEq)]
+    struct DoubleRange(Range<u16>, Range<u16>);
+
+    #[derive(Debug, Clone, PartialEq)]
+    struct DoubleCounter {
+        range: DoubleRange, // not a ref to avoid requiring lifetime on Stepper
+        // AND side step https://github.com/rust-lang/rust/issues/81823
+        current: u16,
+    }
+
+    impl DoubleCounter {
+        fn new(drange: DoubleRange) -> Self {
+            let s = drange.1.start;
+            Self {
+                range: drange,
+                current: s,
+            }
+        }
+    }
+
+    impl Iterator for DoubleCounter {
+        type Item = u16;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            match self.current.checked_add(1) {
+                None => None,
+                Some(res) => {
+                    if self.range.1.contains(&res) {
+                        self.current = res;
+                        Some(res)
+                    } else {
+                        None
+                    }
+                }
+            }
+        }
+    }
+
+    impl PartialComputable for DoubleRange {
+        type Step = u16;
+        type Stepper = DoubleCounter;
+
+        fn compute_reset(&self) -> Peekable<Self::Stepper> {
+            let this = self.clone();
+            Self::Stepper::new(this).peekable()
+        }
+
+        fn compute_partial(
+            &mut self,
+            elapsed: Duration,
+            until: impl Fn() -> bool,
+            remainder: &mut Peekable<Self::Stepper>,
+        ) {
+            loop {
+                //attempt an update step
+                match remainder.next() {
+                    None => {
+                        break;
+                    }
+                    Some(i) => {
+                        // just keep going
+                    }
+                }
+
+                //late until call to ensure some progress
+                if until() {
+                    break;
+                }
+            }
+        }
+
+        fn update_completed(&self) -> bool {
+            todo!()
+        }
+    }
 
     //TODO : test that ensures actual progress on partial compute
+
+    #[test]
+    fn compute_reset_works() {
+        let dr = DoubleRange(0..1u16, 0..42u16);
+
+        let cnt = dr.compute_reset();
+
+        let vrif = DoubleCounter {
+            range: dr.clone(),
+            current: dr.1.start,
+        };
+
+        for (c, v) in zip(cnt, vrif) {
+            assert_eq!(c, v)
+        }
+    }
+
+    #[test]
+    fn compute_partial_actually_updates() {
+        let mut dr = DoubleRange(0..1u16, 0..42u16);
+
+        let mut cnt = dr.compute_reset();
+
+        assert_eq!(cnt.peek(), Some(&1));
+
+        dr.compute_partial(Duration::new(0, 0), || true, &mut cnt);
+
+        assert_eq!(cnt.peek(), Some(&2));
+    }
 
     //TODO : test that ensure compute actually update stuff (for both cases)
 }
