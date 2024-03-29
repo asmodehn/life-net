@@ -1,5 +1,5 @@
 use crate::cell;
-use figment::compute::{Computable, PartialComputable};
+use figment::compute::Computable;
 use figment::graphics::Viewable;
 use grid::Grid;
 use itertools::iproduct;
@@ -20,6 +20,7 @@ impl QuadUpdate {
     pub fn new(cells: &Grid<cell::State>) -> Self {
         let original = cells.clone(); // because we need to own our copy for later compute
 
+        //TODO : separate to not always require reshuffling... only if/when we have time...
         let mut left_over: Vec<(usize, usize)> =
             iproduct!(0..cells.rows(), 0..cells.cols()).collect();
         left_over.shuffle();
@@ -35,6 +36,7 @@ impl QuadUpdate {
     }
 }
 
+//TODO : EXactSizedIterator
 impl Iterator for QuadUpdate {
     type Item = (usize, usize, Option<cell::State>);
 
@@ -56,9 +58,7 @@ fn to_colors(state: &Grid<cell::State>) -> Vec<Color> {
 
 pub struct Quad {
     progress: Grid<cell::State>,
-    update: Option<QuadUpdate>,
     image: RefCell<Image>,
-    updated_cb: fn(&mut Self),
 }
 
 impl Quad {
@@ -74,9 +74,7 @@ impl Quad {
 
         Self {
             progress: state_grid,
-            update: Some(update),
             image: RefCell::new(img),
-            updated_cb: Self::reset_update,
         }
     }
 
@@ -107,38 +105,19 @@ impl Quad {
             }
         }
 
-        let update = QuadUpdate::new(&progress);
-
-        Self {
-            progress,
-            update: Some(update),
-            ..self
-        }
+        Self { progress, ..self }
     }
 
-    fn reset_update(&mut self) {
-        self.update = Some(QuadUpdate::new(&self.progress));
-    }
-
-    fn update<I>(&mut self, _elapsed: Duration, until: impl Fn() -> bool, remainder: &mut I)
-    where
-        I: Iterator<Item = (usize, usize, Option<cell::State>)>,
-    {
-        loop {
-            //attempt an update step
-            match remainder.next() {
-                None => {
-                    break;
-                }
-                Some((_, _, None)) => {} // out of bounds ?
-                Some((x, y, Some(cell_state))) => {
-                    self.progress[(x as usize, y as usize)] = cell_state;
-                }
-            }
-
-            //late until call to ensure some progress
-            if until() {
-                break;
+    /// Attempt an update step.
+    /// Returns false if the iterator has ended.
+    fn update_step(&mut self, _elapsed: Duration, remainder: &mut Peekable<QuadUpdate>) -> bool {
+        //attempt an update step
+        match remainder.next() {
+            None => false,
+            Some((_, _, None)) => true, // out of bounds ?
+            Some((x, y, Some(cell_state))) => {
+                self.progress[(x as usize, y as usize)] = cell_state;
+                true
             }
         }
     }
@@ -148,50 +127,28 @@ impl Quad {
     }
 }
 
-impl PartialComputable for Quad {
-    type Step = (usize, usize, Option<cell::State>);
+impl Computable for Quad {
     type Stepper = QuadUpdate;
 
     fn compute_reset(&self) -> Peekable<QuadUpdate> {
         self.stepper().peekable()
     }
 
-    fn compute_partial(
+    fn compute(&mut self, _elapsed: Duration, remainder: &mut Peekable<QuadUpdate>) {
+        while self.update_step(_elapsed, remainder) {
+            //noop
+        }
+    }
+
+    fn compute_until(
         &mut self,
         _elapsed: Duration,
-        until: impl Fn() -> bool,
         remainder: &mut Peekable<QuadUpdate>,
+        until: impl Fn() -> bool,
     ) {
-        self.update(_elapsed, until, remainder);
-    }
-
-    fn update_completed(&self) -> bool {
-        self.update.as_ref().is_some_and(|iup| iup.completed())
-    }
-}
-
-impl Computable for Quad {
-    fn compute(&mut self, _elapsed: Duration) {
-        loop {
-            //check for completion
-            if self.update_completed() {
-                (self.updated_cb)(self);
+        while self.update_step(_elapsed, remainder) {
+            if until() {
                 break;
-            }
-            //TODO : test: isn't this duplication ??
-            //(re)initialize if needed
-            if self.update.is_none() {
-                //start new update when necessary
-                self.update = Some(QuadUpdate::new(&self.progress));
-            }
-
-            //attempt an update step
-            match self.update.as_mut().unwrap().next() {
-                None => {}
-                Some((_, _, None)) => {}
-                Some((x, y, Some(cell_state))) => {
-                    self.progress[(x as usize, y as usize)] = cell_state;
-                }
             }
         }
     }
@@ -214,7 +171,7 @@ mod tests {
     use crate::quad::Quad;
     use std::time::Duration;
 
-    use figment::compute::{Computable, PartialComputable};
+    use figment::compute::Computable;
 
     use grid::grid;
     use test::Bencher;
@@ -223,8 +180,9 @@ mod tests {
     fn cell_dies_alone() {
         let mut q = Quad::new(grid![[cell::State::Alive]]);
 
+        let mut stpr = q.compute_reset();
         //one update
-        q.compute(Duration::new(0, 0));
+        q.compute(Duration::new(0, 0), &mut stpr);
 
         assert_eq!(q.progress[(0, 0)], cell::State::Dead)
     }
@@ -234,7 +192,7 @@ mod tests {
         let mut q = Quad::new(grid![[cell::State::Alive]]);
 
         let mut stpr = q.compute_reset();
-        let _ = q.compute_partial(Duration::new(0, 0), || true, &mut stpr);
+        let _ = q.compute_until(Duration::new(0, 0), &mut stpr, || true);
 
         assert_eq!(q.progress[(0, 0)], cell::State::Dead)
     }
@@ -246,8 +204,9 @@ mod tests {
             grid![[cell::State::Alive, cell::State::Alive][cell::State::Alive, cell::State::Alive]],
         );
 
+        let mut stepper = q.compute_reset();
         //one update
-        q.compute(Duration::new(0, 0));
+        q.compute(Duration::new(0, 0), &mut stepper);
 
         assert_eq!(
             q.progress,
@@ -262,8 +221,9 @@ mod tests {
         );
         //permanent square in quad
 
-        //one update
-        let _ = q.compute_partial(Duration::new(0, 0), || true, &mut q.compute_reset());
+        let mut stepper = q.compute_reset();
+        //one step only
+        let _ = q.compute_until(Duration::new(0, 0), &mut stepper, || true);
 
         assert_eq!(
             q.progress,
@@ -278,7 +238,8 @@ mod tests {
         let mut q = Quad::gen(State::Dead, 64, 64).with_random_cells();
 
         b.iter(|| {
-            q.compute(Duration::new(0, 0));
+            let mut stepper = q.compute_reset();
+            q.compute(Duration::new(0, 0), &mut stepper);
         });
     }
 
@@ -287,7 +248,8 @@ mod tests {
         let mut q = Quad::gen(State::Dead, 128, 128).with_random_cells();
 
         b.iter(|| {
-            q.compute(Duration::new(0, 0));
+            let mut stepper = q.compute_reset();
+            q.compute(Duration::new(0, 0), &mut stepper);
         });
     }
 
@@ -296,7 +258,8 @@ mod tests {
         let mut q = Quad::gen(State::Dead, 256, 256).with_random_cells();
 
         b.iter(|| {
-            q.compute(Duration::new(0, 0));
+            let mut stepper = q.compute_reset();
+            q.compute(Duration::new(0, 0), &mut stepper);
         });
     }
 }

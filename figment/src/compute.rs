@@ -21,25 +21,18 @@ fn get_updates_per_second() -> Option<f32> {
 }
 
 pub trait Computable {
-    fn compute(&mut self, elapsed: Duration);
-}
-
-pub trait PartialComputable {
-    type Step;
-
     type Stepper: Iterator;
 
     fn compute_reset(&self) -> Peekable<Self::Stepper>;
 
-    fn compute_partial(
+    fn compute(&mut self, elapsed: Duration, remainder: &mut Peekable<Self::Stepper>);
+
+    fn compute_until(
         &mut self,
         elapsed: Duration,
-        until: impl Fn() -> bool,
         remainder: &mut Peekable<Self::Stepper>,
+        until: impl Fn() -> bool,
     );
-
-    //TODO : this will become unnecessary
-    fn update_completed(&self) -> bool; // TODO some kind of progress measurement ?
 }
 
 static DURATION_AVERAGE: Lazy<RunningAverage<Duration>> =
@@ -54,7 +47,8 @@ where
     let elapsed = COMPUTE_TIMER.elapsed_and_reset();
     DURATION_AVERAGE.record(elapsed);
 
-    computable.compute(elapsed);
+    let mut cit = computable.compute_reset();
+    computable.compute(elapsed, &mut cit);
 }
 
 pub struct ComputeCtx {
@@ -121,40 +115,37 @@ impl ComputeCtx {
     }
 }
 
-pub fn compute_reset<PC>(computable: &PC) -> Peekable<PC::Stepper>
+pub fn compute_reset<C>(computable: &C) -> Peekable<C::Stepper>
 where
-    PC: PartialComputable,
+    C: Computable,
 {
     computable.compute_reset()
 }
 
 //TODO : make compute code similar somehow...
-pub fn compute_partial<PC>(
-    computable: &mut PC,
+pub fn compute_until<C>(
+    computable: &mut C,
+    stepper: &mut Option<Peekable<C::Stepper>>,
     ctx: &mut ComputeCtx,
-    stepper: &mut Option<Peekable<PC::Stepper>>,
 ) where
-    PC: PartialComputable,
+    C: Computable,
 {
     ctx.reset_timer();
 
-    //TODO : merge these ifs !
-    if computable.update_completed() {
+    if stepper.is_none() || stepper.as_mut().is_some_and(|s| s.peek().is_none()) {
+        // println!("RESET !");
+        *stepper = Some(computable.compute_reset());
+
         let elapsed = COMPUTE_TIMER.elapsed_and_reset();
         DURATION_AVERAGE.record(elapsed);
         ctx.last_elapsed = elapsed;
     }
 
-    if stepper.is_none() || stepper.as_mut().is_some_and(|s| s.peek().is_none()) {
-        // println!("RESET !");
-        *stepper = Some(computable.compute_reset());
-    }
-
     // Note last_elapsed is the update timer
-    computable.compute_partial(
+    computable.compute_until(
         ctx.last_elapsed,
-        ctx.until_closure(),
         stepper.as_mut().unwrap(),
+        ctx.until_closure(),
     );
 }
 
@@ -165,7 +156,7 @@ mod tests {
     #![allow(unused_imports)]
 
     use crate::compute;
-    use crate::compute::{ComputeCtx, PartialComputable};
+    use crate::compute::{Computable, ComputeCtx};
     use itertools::Itertools;
     use std::iter::{zip, Peekable};
     use std::ops::Range;
@@ -209,8 +200,7 @@ mod tests {
         }
     }
 
-    impl PartialComputable for DoubleRange {
-        type Step = u16;
+    impl Computable for DoubleRange {
         type Stepper = DoubleCounter;
 
         fn compute_reset(&self) -> Peekable<Self::Stepper> {
@@ -218,11 +208,11 @@ mod tests {
             Self::Stepper::new(this).peekable()
         }
 
-        fn compute_partial(
+        fn compute_until(
             &mut self,
             elapsed: Duration,
-            until: impl Fn() -> bool,
             remainder: &mut Peekable<Self::Stepper>,
+            until: impl Fn() -> bool,
         ) {
             loop {
                 //attempt an update step
@@ -242,8 +232,18 @@ mod tests {
             }
         }
 
-        fn update_completed(&self) -> bool {
-            todo!()
+        fn compute(&mut self, elapsed: Duration, remainder: &mut Peekable<Self::Stepper>) {
+            loop {
+                //attempt an update step
+                match remainder.next() {
+                    None => {
+                        break;
+                    }
+                    Some(i) => {
+                        // just keep going
+                    }
+                }
+            }
         }
     }
 
@@ -251,7 +251,7 @@ mod tests {
 
     #[test]
     fn compute_reset_works() {
-        let dr = DoubleRange(0..1u16, 0..42u16);
+        let dr = DoubleRange(0..7u16, 0..42u16);
 
         let cnt = dr.compute_reset();
 
@@ -267,15 +267,19 @@ mod tests {
 
     #[test]
     fn compute_partial_actually_updates() {
-        let mut dr = DoubleRange(0..1u16, 0..42u16);
+        let mut dr = DoubleRange(0..7u16, 0..42u16);
 
         let mut cnt = dr.compute_reset();
 
         assert_eq!(cnt.peek(), Some(&1));
 
-        dr.compute_partial(Duration::new(0, 0), || true, &mut cnt);
+        dr.compute_until(Duration::new(0, 0), &mut cnt, || true);
 
         assert_eq!(cnt.peek(), Some(&2));
+
+        dr.compute(Duration::new(0, 0), &mut cnt);
+
+        assert_eq!(cnt.peek(), None)
     }
 
     //TODO : test that ensure compute actually update stuff (for both cases)

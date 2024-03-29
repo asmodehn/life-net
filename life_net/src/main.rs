@@ -6,8 +6,8 @@ extern crate test;
 use figment::compute;
 use figment::graphics;
 use figment::graphics::Viewable; // needed for render method...
-use quadlife::cell;
 use macroquad::prelude::*;
+use quadlife::cell;
 use std::ops::Deref;
 use std::time::Duration;
 
@@ -22,7 +22,7 @@ fn window_conf() -> Conf {
     }
 }
 
-const PARTIAL_UPDATE: bool = true;
+const PARTIAL_UPDATE: bool = false;
 
 #[macroquad::main(window_conf)]
 async fn main() {
@@ -70,7 +70,7 @@ async fn main() {
             //PARTIAL UPDATE
             compute_context.set_constraint(available_sim_duration);
 
-            compute::compute_partial(&mut lifequad, &mut compute_context, &mut quad_upd_opt);
+            compute::compute_until(&mut lifequad, &mut quad_upd_opt, &mut compute_context);
         } else {
             //FULL UPDATE
             compute::compute(&mut lifequad);
