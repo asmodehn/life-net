@@ -210,7 +210,7 @@ impl Viewable for Quad {
 #[cfg(test)]
 mod tests {
     use crate::cell;
-    use crate::cell::{State, ALIVE, DEAD};
+    use crate::cell::State;
     use crate::quad::Quad;
     use std::time::Duration;
 

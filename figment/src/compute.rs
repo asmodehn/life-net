@@ -145,7 +145,7 @@ pub fn compute_partial<PC>(
         ctx.last_elapsed = elapsed;
     }
 
-    if stepper.is_none() || stepper.as_mut().is_some_and(|mut s| s.peek().is_none()) {
+    if stepper.is_none() || stepper.as_mut().is_some_and(|s| s.peek().is_none()) {
         // println!("RESET !");
         *stepper = Some(computable.compute_reset());
     }

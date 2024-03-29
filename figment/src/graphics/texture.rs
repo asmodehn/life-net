@@ -41,7 +41,7 @@ impl Quad for Texture {
     }
 
     // NOT really changeable ??
-    fn set_dimensions(&mut self, dimensions: UVec2) {
+    fn set_dimensions(&mut self, _dimensions: UVec2) {
         //todo()
     }
 
@@ -50,7 +50,7 @@ impl Quad for Texture {
     }
 
     // NOT freely scalable ??
-    fn scale(&mut self, factor: u32) {
+    fn scale(&mut self, _factor: u32) {
         //todo()
     }
 }
